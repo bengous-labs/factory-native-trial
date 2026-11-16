@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { countUnattended, parsePullRequests } from "./pr";
+import { countByState, countUnattended, parsePullRequests } from "./pr";
 
 test("parses the array gh pr list prints", () => {
   const prs = parsePullRequests(
@@ -15,26 +15,22 @@ test("rejects anything but an array", () => {
   expect(() => parsePullRequests("{}")).toThrow("expected a JSON array");
 });
 
-const rpr = (number: number, logins: string[]) => ({
-  number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt: null,
-  reviews: logins.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T10:00:00Z" })),
+const prOf = (number: number, state: "OPEN" | "CLOSED" | "MERGED") => ({
+  number,
+  title: "t",
+  state,
+  author: { login: "x" },
+  mergedAt: null,
+  reviews: [],
 });
 
-async function rounds(prs: unknown[], reviewer = "bob") {
-  const p = Bun.spawn(["bun", "src/cli.ts", "rounds", "--reviewer", reviewer], { stdin: new Blob([JSON.stringify(prs)]), stdout: "pipe" });
-  return (await new Response(p.stdout).text()).trim();
-}
-
-test("rounds prints one line per PR sorted by number, then the median", async () => {
-  expect(await rounds([rpr(5, ["bob", "bob", "bob"]), rpr(2, ["bob"]), rpr(3, ["bob", "bob"])])).toBe("#2 1\n#3 2\n#5 3\nmedian 2");
+test("counts each state", () => {
+  const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
+  expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1"]);
 });
 
-test("rounds shows 0 for a PR with no review from the reviewer", async () => {
-  expect(await rounds([rpr(1, ["amy"]), rpr(2, [])])).toBe("#1 0\n#2 0\nmedian 0");
-});
-
-test("rounds on empty input prints median 0", async () => {
-  expect(await rounds([])).toBe("median 0");
+test("an empty input shows 0 for every state", () => {
+  expect(countByState([])).toEqual(["open 0", "merged 0", "closed 0"]);
 });
 
 const pr = (number: number, state: "OPEN" | "CLOSED" | "MERGED", reviewers: string[]) => ({
@@ -73,4 +69,26 @@ test("cli unattended without --owner exits 1 with usage", async () => {
   const r = await run(["unattended"], "[]");
   expect(r.code).toBe(1);
   expect(r.err).toContain("usage:");
+});
+
+const rpr = (number: number, logins: string[]) => ({
+  number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt: null,
+  reviews: logins.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T10:00:00Z" })),
+});
+
+async function rounds(prs: unknown[], reviewer = "bob") {
+  const p = Bun.spawn(["bun", "src/cli.ts", "rounds", "--reviewer", reviewer], { stdin: new Blob([JSON.stringify(prs)]), stdout: "pipe" });
+  return (await new Response(p.stdout).text()).trim();
+}
+
+test("rounds prints one line per PR sorted by number, then the median", async () => {
+  expect(await rounds([rpr(5, ["bob", "bob", "bob"]), rpr(2, ["bob"]), rpr(3, ["bob", "bob"])])).toBe("#2 1\n#3 2\n#5 3\nmedian 2");
+});
+
+test("rounds shows 0 for a PR with no review from the reviewer", async () => {
+  expect(await rounds([rpr(1, ["amy"]), rpr(2, [])])).toBe("#1 0\n#2 0\nmedian 0");
+});
+
+test("rounds on empty input prints median 0", async () => {
+  expect(await rounds([])).toBe("median 0");
 });

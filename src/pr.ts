@@ -23,6 +23,18 @@ export function parsePullRequests(json: string): PullRequest[] {
   return data as PullRequest[];
 }
 
+export function countByState(prs: PullRequest[]): string[] {
+  const counts = { OPEN: 0, MERGED: 0, CLOSED: 0 };
+  for (const pr of prs) counts[pr.state]++;
+  return [`open ${counts.OPEN}`, `merged ${counts.MERGED}`, `closed ${counts.CLOSED}`];
+}
+
+export function countUnattended(prs: PullRequest[], owner: string): number {
+  return prs.filter(
+    (pr) => pr.state === "MERGED" && !pr.reviews.some((r) => r.author.login === owner),
+  ).length;
+}
+
 export function reviewRounds(prs: PullRequest[], reviewer: string): { number: number; rounds: number }[] {
   return prs
     .map((pr) => ({ number: pr.number, rounds: pr.reviews.filter((r) => r.author.login === reviewer).length }))
@@ -34,10 +46,4 @@ export function median(values: number[]): number {
   const s = [...values].sort((a, b) => a - b);
   const mid = s.length >> 1;
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
-}
-
-export function countUnattended(prs: PullRequest[], owner: string): number {
-  return prs.filter(
-    (pr) => pr.state === "MERGED" && !pr.reviews.some((r) => r.author.login === owner),
-  ).length;
 }
