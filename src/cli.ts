@@ -45,7 +45,7 @@ switch (command) {
     const unattended = countUnattended(prs, owner);
     const merged = prs.filter((pr) => pr.state === "MERGED").length;
     console.log(unattended);
-    console.log(`${Math.round((unattended / merged) * 100)}%`);
+    console.log(`${merged === 0 ? 0 : Math.round((unattended / merged) * 100)}%`);
     break;
   }
   default:

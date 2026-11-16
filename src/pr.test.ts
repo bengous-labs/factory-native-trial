@@ -65,6 +65,12 @@ test("cli unattended prints the count, then the share of merged PRs", async () =
   expect(r.out.trim()).toBe("1\n50%");
 });
 
+test("cli unattended prints 0% when no PR is merged", async () => {
+  const r = await run(["unattended", "--owner", "bengous"], JSON.stringify([pr(1, "OPEN", [])]));
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("0\n0%");
+});
+
 test("cli unattended without --owner exits 1 with usage", async () => {
   const r = await run(["unattended"], "[]");
   expect(r.code).toBe(1);
