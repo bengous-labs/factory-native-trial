@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { countUnattended, parsePullRequests } from "./pr";
+import { countByState, countUnattended, parsePullRequests } from "./pr";
 
 test("parses the array gh pr list prints", () => {
   const prs = parsePullRequests(
@@ -13,6 +13,24 @@ test("parses the array gh pr list prints", () => {
 
 test("rejects anything but an array", () => {
   expect(() => parsePullRequests("{}")).toThrow("expected a JSON array");
+});
+
+const prOf = (number: number, state: "OPEN" | "CLOSED" | "MERGED") => ({
+  number,
+  title: "t",
+  state,
+  author: { login: "x" },
+  mergedAt: null,
+  reviews: [],
+});
+
+test("counts each state", () => {
+  const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
+  expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1"]);
+});
+
+test("an empty input shows 0 for every state", () => {
+  expect(countByState([])).toEqual(["open 0", "merged 0", "closed 0"]);
 });
 
 const pr = (number: number, state: "OPEN" | "CLOSED" | "MERGED", reviewers: string[]) => ({
