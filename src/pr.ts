@@ -42,7 +42,7 @@ export function reviewRounds(prs: PullRequest[], reviewer: string): { number: nu
 }
 
 export function mergedSince(prs: PullRequest[], since: string): number {
-  return prs.filter((pr) => pr.mergedAt !== null && pr.mergedAt < since).length;
+  return prs.filter((pr) => pr.mergedAt !== null && pr.mergedAt >= since).length;
 }
 
 export function median(values: number[]): number {
