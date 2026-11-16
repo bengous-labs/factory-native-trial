@@ -58,11 +58,11 @@ const run = async (args: string[], input: string) => {
   return { out, err, code };
 };
 
-test("cli unattended prints one number", async () => {
+test("cli unattended prints the count, then the share of merged PRs", async () => {
   const input = JSON.stringify([pr(1, "MERGED", []), pr(2, "MERGED", ["bengous"]), pr(3, "OPEN", [])]);
   const r = await run(["unattended", "--owner", "bengous"], input);
   expect(r.code).toBe(0);
-  expect(r.out.trim()).toBe("1");
+  expect(r.out.trim()).toBe("1\n50%");
 });
 
 test("cli unattended without --owner exits 1 with usage", async () => {
