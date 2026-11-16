@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { countByState, countUnattended, mergedSince, parsePullRequests } from "./pr";
+import { countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
+
+test("median of an even count is the mean of the middle pair", () => {
+  expect(median([4, 1, 3, 2])).toBe(2.5);
+});
 
 test("merged since ignores open PRs and empty input", () => {
   expect(mergedSince([], "2026-11-16")).toBe(0);
