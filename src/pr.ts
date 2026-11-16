@@ -41,6 +41,10 @@ export function reviewRounds(prs: PullRequest[], reviewer: string): { number: nu
     .sort((a, b) => a.number - b.number);
 }
 
+export function mergedSince(prs: PullRequest[], since: string): number {
+  return prs.filter((pr) => pr.mergedAt !== null && pr.mergedAt >= since).length;
+}
+
 export function median(values: number[]): number {
   if (values.length === 0) return 0;
   const s = [...values].sort((a, b) => a - b);
