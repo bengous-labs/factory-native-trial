@@ -84,6 +84,11 @@ test("cli unattended prints 0% when no PR is merged", async () => {
   expect(r.out.trim()).toBe("0\n0%");
 });
 
+test("cli count --merged ignores open and closed-unmerged PRs", async () => {
+  const r = await run(["count", "--merged"], JSON.stringify([pr(1, "MERGED", []), pr(2, "CLOSED", []), pr(3, "OPEN", [])]));
+  expect(r.out.trim()).toBe("1");
+});
+
 test("cli unattended without --owner exits 1 with usage", async () => {
   const r = await run(["unattended"], "[]");
   expect(r.code).toBe(1);
