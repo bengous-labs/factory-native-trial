@@ -126,3 +126,8 @@ test("rounds does not count a clean (APPROVED) review", async () => {
   const p = { ...rpr(1, []), reviews: [review("CHANGES_REQUESTED"), review("COMMENTED"), review("APPROVED")] };
   expect(await rounds([p])).toBe("#1 2\nmedian 2");
 });
+
+test("cli states --json prints the counts as one JSON object", async () => {
+  const r = await run(["states", "--json"], JSON.stringify([pr(1, "OPEN", []), pr(2, "MERGED", []), pr(3, "MERGED", []), pr(4, "CLOSED", [])]));
+  expect(JSON.parse(r.out)).toEqual({ open: 1, merged: 2, closed: 1, total: 4 });
+});
