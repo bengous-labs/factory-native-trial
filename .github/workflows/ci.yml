@@ -16,5 +16,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          count=$(gh pr list --state all --json number,title,state,author,mergedAt,reviews | bun src/cli.ts count)
+          count=$(gh pr list --state all --limit 1000 --json number,title,state,author,mergedAt,reviews | bun src/cli.ts count)
           echo "Pull requests: $count" >> "$GITHUB_STEP_SUMMARY"
