@@ -43,11 +43,11 @@ const prOf = (number: number, state: "OPEN" | "CLOSED" | "MERGED") => ({
 
 test("counts each state", () => {
   const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
-  expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1"]);
+  expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1", "total 5"]);
 });
 
 test("an empty input shows 0 for every state", () => {
-  expect(countByState([])).toEqual(["open 0", "merged 0", "closed 0"]);
+  expect(countByState([])).toEqual(["open 0", "merged 0", "closed 0", "total 0"]);
 });
 
 const pr = (number: number, state: "OPEN" | "CLOSED" | "MERGED", reviewers: string[]) => ({
