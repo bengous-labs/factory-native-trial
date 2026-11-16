@@ -1,4 +1,4 @@
-import { PR_JSON_FIELDS, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
+import { PR_JSON_FIELDS, countByState, countUnattended, medianOf, mergedSince, parsePullRequests, reviewRounds } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
@@ -32,7 +32,7 @@ switch (command) {
     }
     const rows = reviewRounds(parsePullRequests(await Bun.stdin.text()), reviewer);
     for (const r of rows) console.log(`#${r.number} ${r.rounds}`);
-    console.log(`median ${median(rows.map((r) => r.rounds))}`);
+    console.log(`median ${medianOf(rows.map((r) => r.rounds))}`);
     break;
   }
   case "unattended": {
