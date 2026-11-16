@@ -35,3 +35,9 @@ export function median(values: number[]): number {
   const mid = s.length >> 1;
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
 }
+
+export function countUnattended(prs: PullRequest[], owner: string): number {
+  return prs.filter(
+    (pr) => pr.state === "MERGED" && !pr.reviews.some((r) => r.author.login === owner),
+  ).length;
+}

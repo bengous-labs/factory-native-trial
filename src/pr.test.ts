@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parsePullRequests } from "./pr";
+import { countUnattended, parsePullRequests } from "./pr";
 
 test("parses the array gh pr list prints", () => {
   const prs = parsePullRequests(
@@ -15,7 +15,7 @@ test("rejects anything but an array", () => {
   expect(() => parsePullRequests("{}")).toThrow("expected a JSON array");
 });
 
-const pr = (number: number, logins: string[]) => ({
+const rpr = (number: number, logins: string[]) => ({
   number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt: null,
   reviews: logins.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T10:00:00Z" })),
 });
@@ -26,13 +26,51 @@ async function rounds(prs: unknown[], reviewer = "bob") {
 }
 
 test("rounds prints one line per PR sorted by number, then the median", async () => {
-  expect(await rounds([pr(5, ["bob", "bob", "bob"]), pr(2, ["bob"]), pr(3, ["bob", "bob"])])).toBe("#2 1\n#3 2\n#5 3\nmedian 2");
+  expect(await rounds([rpr(5, ["bob", "bob", "bob"]), rpr(2, ["bob"]), rpr(3, ["bob", "bob"])])).toBe("#2 1\n#3 2\n#5 3\nmedian 2");
 });
 
 test("rounds shows 0 for a PR with no review from the reviewer", async () => {
-  expect(await rounds([pr(1, ["amy"]), pr(2, [])])).toBe("#1 0\n#2 0\nmedian 0");
+  expect(await rounds([rpr(1, ["amy"]), rpr(2, [])])).toBe("#1 0\n#2 0\nmedian 0");
 });
 
 test("rounds on empty input prints median 0", async () => {
   expect(await rounds([])).toBe("median 0");
+});
+
+const pr = (number: number, state: "OPEN" | "CLOSED" | "MERGED", reviewers: string[]) => ({
+  number,
+  title: `pr ${number}`,
+  state,
+  author: { login: "bot" },
+  mergedAt: state === "MERGED" ? "2026-11-16T10:00:00Z" : null,
+  reviews: reviewers.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T09:00:00Z" })),
+});
+
+test("unattended counts merged PRs with no review from the owner", () => {
+  const prs = [pr(1, "MERGED", []), pr(2, "MERGED", ["bengous"]), pr(3, "MERGED", ["other"])];
+  expect(countUnattended(prs, "bengous")).toBe(2);
+});
+
+test("unattended ignores open and closed-unmerged PRs", () => {
+  const prs = [pr(1, "OPEN", []), pr(2, "CLOSED", []), pr(3, "MERGED", [])];
+  expect(countUnattended(prs, "bengous")).toBe(1);
+});
+
+const run = async (args: string[], input: string) => {
+  const proc = Bun.spawn(["bun", "src/cli.ts", ...args], { stdin: new Blob([input]), stdout: "pipe", stderr: "pipe" });
+  const [out, err, code] = [await new Response(proc.stdout).text(), await new Response(proc.stderr).text(), await proc.exited];
+  return { out, err, code };
+};
+
+test("cli unattended prints one number", async () => {
+  const input = JSON.stringify([pr(1, "MERGED", []), pr(2, "MERGED", ["bengous"]), pr(3, "OPEN", [])]);
+  const r = await run(["unattended", "--owner", "bengous"], input);
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("1");
+});
+
+test("cli unattended without --owner exits 1 with usage", async () => {
+  const r = await run(["unattended"], "[]");
+  expect(r.code).toBe(1);
+  expect(r.err).toContain("usage:");
 });
