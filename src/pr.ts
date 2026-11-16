@@ -26,7 +26,7 @@ export function parsePullRequests(json: string): PullRequest[] {
 export function countByState(prs: PullRequest[]): string[] {
   const counts = { OPEN: 0, MERGED: 0, CLOSED: 0 };
   for (const pr of prs) counts[pr.state]++;
-  return [`open ${counts.OPEN}`, `merged ${counts.MERGED}`, `closed ${counts.CLOSED}`];
+  return [`open ${counts.OPEN}`, `merged ${counts.MERGED}`, `closed ${counts.CLOSED}`, `total ${prs.length}`];
 }
 
 export function countUnattended(prs: PullRequest[], owner: string): number {
