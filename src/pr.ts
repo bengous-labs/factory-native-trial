@@ -28,3 +28,9 @@ export function countByState(prs: PullRequest[]): string[] {
   for (const pr of prs) counts[pr.state]++;
   return [`open ${counts.OPEN}`, `merged ${counts.MERGED}`, `closed ${counts.CLOSED}`];
 }
+
+export function countUnattended(prs: PullRequest[], owner: string): number {
+  return prs.filter(
+    (pr) => pr.state === "MERGED" && !pr.reviews.some((r) => r.author.login === owner),
+  ).length;
+}
