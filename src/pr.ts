@@ -22,3 +22,9 @@ export function parsePullRequests(json: string): PullRequest[] {
   }
   return data as PullRequest[];
 }
+
+export function countUnattended(prs: PullRequest[], owner: string): number {
+  return prs.filter(
+    (pr) => pr.state === "MERGED" && !pr.reviews.some((r) => r.author.login === owner),
+  ).length;
+}
