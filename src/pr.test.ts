@@ -101,7 +101,7 @@ test("cli unattended without --owner exits 1 with usage", async () => {
 
 const rpr = (number: number, logins: string[]) => ({
   number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt: null,
-  reviews: logins.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T10:00:00Z" })),
+  reviews: logins.map((login) => ({ author: { login }, state: "CHANGES_REQUESTED", submittedAt: "2026-11-16T10:00:00Z" })),
 });
 
 async function rounds(prs: unknown[], reviewer = "bob") {
@@ -119,4 +119,10 @@ test("rounds shows 0 for a PR with no review from the reviewer", async () => {
 
 test("rounds on empty input prints median 0", async () => {
   expect(await rounds([])).toBe("median 0");
+});
+
+test("rounds does not count a clean (APPROVED) review", async () => {
+  const review = (state: string) => ({ author: { login: "bob" }, state, submittedAt: "2026-11-16T10:00:00Z" });
+  const p = { ...rpr(1, []), reviews: [review("CHANGES_REQUESTED"), review("COMMENTED"), review("APPROVED")] };
+  expect(await rounds([p])).toBe("#1 2\nmedian 2");
 });
