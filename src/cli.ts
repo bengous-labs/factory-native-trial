@@ -60,7 +60,11 @@ switch (command) {
     console.log(mergedSince(parsePullRequests(await Bun.stdin.text()), since));
     break;
   }
+  case undefined:
+  case "help":
+    console.log(USAGE);
+    break;
   default:
     console.error(USAGE);
-    process.exit(command === undefined || command === "help" ? 0 : 1);
+    process.exit(1);
 }

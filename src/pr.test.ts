@@ -95,6 +95,22 @@ test("cli unattended without --owner exits 1 with usage", async () => {
   expect(r.err).toContain("usage:");
 });
 
+test("cli help and no command print usage to stdout, exit 0", async () => {
+  for (const args of [["help"], []]) {
+    const r = await run(args, "");
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("usage:");
+    expect(r.err).toBe("");
+  }
+});
+
+test("cli unknown command prints usage to stderr, exit 1", async () => {
+  const r = await run(["bogus"], "");
+  expect(r.code).toBe(1);
+  expect(r.err).toContain("usage:");
+  expect(r.out).toBe("");
+});
+
 const rpr = (number: number, logins: string[]) => ({
   number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt: null,
   reviews: logins.map((login) => ({ author: { login }, state: "APPROVED", submittedAt: "2026-11-16T10:00:00Z" })),
