@@ -7,3 +7,7 @@ gh pr list --state all --json number,title,state,author,mergedAt,reviews | bun s
 ```
 
 Run the tests with `bun test`. No dependencies.
+
+## Development
+
+Every command reads `gh pr list --json` output on stdin and prints plain text.
