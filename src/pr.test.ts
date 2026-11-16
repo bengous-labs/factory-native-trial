@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { countByState, countUnattended, parsePullRequests } from "./pr";
+import { countByState, countUnattended, mergedSince, parsePullRequests } from "./pr";
+
+test("merged since ignores open PRs and empty input", () => {
+  expect(mergedSince([], "2026-11-16")).toBe(0);
+  expect(
+    mergedSince([{ number: 1, title: "t", state: "OPEN", author: { login: "x" }, mergedAt: null, reviews: [] }], "2026-11-16"),
+  ).toBe(0);
+});
 
 test("parses the array gh pr list prints", () => {
   const prs = parsePullRequests(
