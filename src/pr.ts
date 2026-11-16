@@ -37,7 +37,7 @@ export function countUnattended(prs: PullRequest[], owner: string): number {
 
 export function reviewRounds(prs: PullRequest[], reviewer: string): { number: number; rounds: number }[] {
   return prs
-    .map((pr) => ({ number: pr.number, rounds: pr.reviews.filter((r) => r.author.login === reviewer).length }))
+    .map((pr) => ({ number: pr.number, rounds: pr.reviews.filter((r) => r.author.login === reviewer && r.state !== "APPROVED").length }))
     .sort((a, b) => a.number - b.number);
 }
 
