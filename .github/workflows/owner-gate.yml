@@ -1,0 +1,47 @@
+name: Owner gate
+# pull_request_target runs this file as it is on main, so a PR cannot edit the gate that judges it.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  merge_group:
+jobs:
+  owner-gate:
+    # The merge queue requires every required check on its merge group; a skipped job reports success.
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      BASE: ${{ github.event.pull_request.base.ref }}
+      OWNER: bengous
+    steps:
+      - name: Hold PRs that touch owner paths until the owner labels them owner-ok
+        run: |
+          set -euo pipefail
+          paths=$(gh api "repos/$REPO/contents/.github/CODEOWNERS?ref=$BASE" --jq .content | base64 -d | awk '!/^#/ && NF {sub(/^\//, "", $1); print $1}')
+          files=$(gh pr diff "$PR" -R "$REPO" --name-only)
+          owned=""
+          for f in $files; do
+            for p in $paths; do
+              case "$f" in "$p"*) owned="$owned $f" ;; esac
+            done
+          done
+          if [ -z "$owned" ]; then
+            echo "No owner path touched."
+            exit 0
+          fi
+          echo "Owner paths touched:$owned"
+          # An agent acts with the owner's account but through the Claude GitHub App; only a label added without an app counts.
+          approved=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" \
+            --jq "[.[] | select((.event == \"labeled\" or .event == \"unlabeled\") and .label.name == \"owner-ok\")] | last | (.event == \"labeled\" and .performed_via_github_app == null and .actor.login == \"$OWNER\")")
+          if [ "$approved" = "true" ]; then
+            echo "Approved by $OWNER."
+            exit 0
+          fi
+          echo "::error::Waiting for $OWNER to add the owner-ok label."
+          exit 1
