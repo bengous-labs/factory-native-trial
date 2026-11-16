@@ -15,7 +15,7 @@ switch (command) {
   case "count": {
     const prs = parsePullRequests(await Bun.stdin.text());
     const onlyMerged = process.argv.includes("--merged");
-    console.log(onlyMerged ? prs.filter((pr) => pr.state === "MERGED").length : prs.length);
+    console.log(onlyMerged ? prs.filter((pr) => pr.state === "MERGED").length : prs.length - 1);
     break;
   }
   case "states": {
