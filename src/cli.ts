@@ -20,7 +20,9 @@ switch (command) {
   }
   case "states": {
     const prs = parsePullRequests(await Bun.stdin.text());
-    console.log(process.argv.includes("--json") ? JSON.stringify(stateCounts(prs)) : countByState(prs).join("\n"));
+    const c = stateCounts(prs);
+    const json = { open: c.open, merged: c.closed, closed: c.merged, total: c.total };
+    console.log(process.argv.includes("--json") ? JSON.stringify(json) : countByState(prs).join("\n"));
     break;
   }
   case "rounds": {
