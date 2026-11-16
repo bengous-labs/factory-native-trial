@@ -1,10 +1,11 @@
-import { PR_JSON_FIELDS, countByState, countUnattended, parsePullRequests } from "./pr";
+import { PR_JSON_FIELDS, countByState, countUnattended, median, parsePullRequests, reviewRounds } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
 commands:
   count                      number of pull requests read
   states                     pull requests that are open, merged and closed without merge
+  rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>`;
 
 const [command] = process.argv.slice(2);
@@ -18,6 +19,18 @@ switch (command) {
   case "states": {
     const prs = parsePullRequests(await Bun.stdin.text());
     console.log(countByState(prs).join("\n"));
+    break;
+  }
+  case "rounds": {
+    const i = process.argv.indexOf("--reviewer");
+    const reviewer = i === -1 ? undefined : process.argv[i + 1];
+    if (!reviewer) {
+      console.error("rounds needs --reviewer <login>");
+      process.exit(1);
+    }
+    const rows = reviewRounds(parsePullRequests(await Bun.stdin.text()), reviewer);
+    for (const r of rows) console.log(`#${r.number} ${r.rounds}`);
+    console.log(`median ${median(rows.map((r) => r.rounds))}`);
     break;
   }
   case "unattended": {
