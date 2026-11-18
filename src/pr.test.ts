@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
+import { closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, stateCounts } from "./pr";
 
 test("median of an even count is the mean of the middle pair", () => {
   expect(median([4, 1, 3, 2])).toBe(2.5);
@@ -44,6 +44,13 @@ const prOf = (number: number, state: "OPEN" | "CLOSED" | "MERGED") => ({
 test("counts each state", () => {
   const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
   expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1", "total 5"]);
+});
+
+test("states --json prints one object with every state and the total", async () => {
+  const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
+  expect(JSON.stringify(stateCounts(prs))).toBe('{"open":1,"merged":3,"closed":1,"total":5}');
+  const proc = Bun.spawn(["bun", "src/cli.ts", "states", "--json"], { stdin: new Blob(["[]"]), stdout: "pipe" });
+  expect(await new Response(proc.stdout).text()).toBe('{"open":0,"merged":0,"closed":0,"total":0}\n');
 });
 
 test("an empty input shows 0 for every state", () => {

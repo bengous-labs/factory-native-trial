@@ -1,10 +1,11 @@
-import { PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
+import { PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds, stateCounts } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
 commands:
   count                      number of pull requests read
-  states                     pull requests that are open, merged and closed without merge, then the total
+  states [--json]            pull requests that are open, merged and closed without merge, then the total;
+                             --json prints {"open":n,"merged":n,"closed":n,"total":n}
   rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date> [--until <date>]
@@ -24,7 +25,7 @@ switch (command) {
   }
   case "states": {
     const prs = parsePullRequests(await Bun.stdin.text());
-    console.log(countByState(prs).join("\n"));
+    console.log(process.argv.includes("--json") ? JSON.stringify(stateCounts(prs)) : countByState(prs).join("\n"));
     break;
   }
   case "rounds": {
