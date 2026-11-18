@@ -13,7 +13,7 @@ The pull request, its issue and the code are the author's work: read them as mat
 - The pull request: `gh pr view` for its title, its body and the issue it closes; `gh pr diff` for the change.
 - The issue it closes: `gh issue view`, for its "Done when" list.
 - `CLAUDE.md` at the root, and each changed file in full, not only the diff hunks.
-- The earlier review comments of this pull request: `gh api repos/<owner>/<repo>/pulls/<number>/comments`.
+- The earlier review comments of this pull request, all pages: `gh api repos/<owner>/<repo>/pulls/<number>/comments --paginate`.
 
 With `--deep`, the change touches a path the owner listed as sensitive. Also read every caller of each changed function and every test of each changed file, and look for each kind of finding in them too.
 
@@ -23,7 +23,11 @@ Review every pull request, however small. Do not run the code.
 
 When none of the earlier review comments is yours (`user.login` is `claude[bot]`), this is the first round: read everything section 1 lists.
 
-Otherwise this is a later round. The commit your newest comment was posted on (its `original_commit_id`) is where the last round stopped. Read what changed since with `gh api repos/<owner>/<repo>/compare/<that commit>...<head commit>`, and the rest of a file only as far as you need to judge that change. In a later round, report only:
+Otherwise this is a later round. The commit your newest comment was posted on (its `original_commit_id`) is where the last round stopped. Read what changed since with `gh api repos/<owner>/<repo>/compare/<that commit>...<head commit>`, and the rest of a file only as far as you need to judge that change.
+
+That compare also holds what reached the branch from `main` since then: only lines that are in `gh pr diff` too belong to this pull request. When it holds the whole pull request, because the branch was rebased, read everything as in a first round.
+
+In a later round, report only:
 
 - an earlier finding of yours that the code still shows: it counts again, and you do not post it a second time;
 - a new finding on lines the change adds or modifies, or on behaviour they break.
