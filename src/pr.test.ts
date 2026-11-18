@@ -180,6 +180,7 @@ const flagErrors: [string[], string][] = [
   [["rounds", "--reviewer", "amy", "--reviewer", "bob"], "rounds: --reviewer given twice"],
   [["merged", "--since", "2026-11-01", "--since", "2026-11-20"], "merged: --since given twice"],
   [["states", "--json", "--json"], "states: --json given twice"],
+  [["authors", "--json", "--json"], "authors: --json given twice"],
   [["prefixes", "--json", "--json"], "prefixes: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
@@ -327,9 +328,13 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes its --json flag", async () => {
-  expect((await run(["help"], "")).out).toContain("prefixes [--json]");
-  expect(await Bun.file("README.md").text()).toContain("prefixes [--json]");
+test("the usage and README.md give prefixes and authors their --json flag", async () => {
+  const usage = (await run(["help"], "")).out;
+  const readme = await Bun.file("README.md").text();
+  for (const entry of ["prefixes [--json]", "authors [--json]"]) {
+    expect(usage).toContain(entry);
+    expect(readme).toContain(entry);
+  }
 });
 
 test("cli prefixes on empty input prints nothing", async () => {
@@ -354,6 +359,14 @@ test("cli authors prints one <login> <count> line per author", async () => {
   const r = await run(["authors"], [byAuthor(1, "amy"), byAuthor(2, "bob"), byAuthor(3, "bob")]);
   expect(r.code).toBe(0);
   expect(r.out).toBe("bob 2\namy 1\n");
+});
+
+test("cli authors --json prints the text output's values as one array of { name, count }", async () => {
+  const prs = [byAuthor(1, "amy"), byAuthor(2, "bob"), byAuthor(3, "bob")];
+  const r = await run(["authors", "--json"], prs);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('[{"name":"bob","count":2},{"name":"amy","count":1}]\n');
+  expect((await run(["authors", "--json"], "[]")).out).toBe("[]\n");
 });
 
 test("cli authors on an empty array prints nothing, exit 0", async () => {

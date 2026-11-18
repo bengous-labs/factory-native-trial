@@ -137,6 +137,11 @@ export function countByAuthor(prs: PullRequest[]): { login: string; count: numbe
     .sort((a, b) => b.count - a.count || (a.login < b.login ? -1 : a.login > b.login ? 1 : 0));
 }
 
+/** countByAuthor as the JSON shape of `authors --json` and `summary`. */
+export function authorCounts(prs: PullRequest[]): { name: string; count: number }[] {
+  return countByAuthor(prs).map(({ login, count }) => ({ name: login, count }));
+}
+
 /** Pull requests merged at or after since and before until, both instants in milliseconds. */
 export function mergedSince(prs: PullRequest[], since: number, until?: number): number {
   return prs.filter((pr) => {
@@ -182,7 +187,7 @@ export function summary(prs: PullRequest[], owner: string, reviewer: string) {
     closed: closedShare(prs).percent,
     unattended: { count: unattended, percent: percent(unattended, countMerged(prs)) },
     rounds: { median: median(rounds), max: rounds.reduce((a, b) => Math.max(a, b), 0) },
-    authors: countByAuthor(prs).map(({ login, count }) => ({ name: login, count })),
+    authors: authorCounts(prs),
     prefixes: prefixCounts(prs),
   };
 }
