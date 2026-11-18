@@ -180,6 +180,7 @@ const flagErrors: [string[], string][] = [
   [["rounds", "--reviewer", "amy", "--reviewer", "bob"], "rounds: --reviewer given twice"],
   [["merged", "--since", "2026-11-01", "--since", "2026-11-20"], "merged: --since given twice"],
   [["states", "--json", "--json"], "states: --json given twice"],
+  [["prefixes", "--json", "--json"], "prefixes: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
   [["summary", "--reviewer", "bob"], "summary needs --owner <login>"],
@@ -314,6 +315,21 @@ test("cli prefixes sorts by count descending, then by prefix", async () => {
   const r = await run(["prefixes"], titles.map((t, i) => titled(i + 1, t)));
   expect(r.code).toBe(0);
   expect(r.out).toBe("fix 3\nfeat 2\nci 1\ndocs 1\nfeat(cli) 1\n");
+});
+
+test("cli prefixes --json prints the text output's values as one array, most first", async () => {
+  const input = ["fix: a", "feat: b", "fix: c", "no colon"].map((t, i) => titled(i + 1, t));
+  const text = (await run(["prefixes"], input)).out.trimEnd().split("\n");
+  const r = await run(["prefixes", "--json"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('[{"name":"fix","count":2},{"name":"feat","count":1},{"name":"other","count":1}]\n');
+  expect(JSON.parse(r.out).map(({ name, count }: { name: string; count: number }) => `${name} ${count}`)).toEqual(text);
+  expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
+});
+
+test("the usage and README.md give prefixes its --json flag", async () => {
+  expect((await run(["help"], "")).out).toContain("prefixes [--json]");
+  expect(await Bun.file("README.md").text()).toContain("prefixes [--json]");
 });
 
 test("cli prefixes on empty input prints nothing", async () => {
