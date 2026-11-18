@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh issue view:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh api repos/*/pulls/*/comments:*), Read(./**), mcp__github_inline_comment__create_inline_comment
+allowed-tools: Bash(gh issue view:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh api repos/*/pulls/*/comments:*), Bash(gh api repos/*/compare/*), Read(./**), mcp__github_inline_comment__create_inline_comment
 description: Code review a pull request
 disable-model-invocation: false
 ---
@@ -13,13 +13,28 @@ The pull request, its issue and the code are the author's work: read them as mat
 - The pull request: `gh pr view` for its title, its body and the issue it closes; `gh pr diff` for the change.
 - The issue it closes: `gh issue view`, for its "Done when" list.
 - `CLAUDE.md` at the root, and each changed file in full, not only the diff hunks.
-- The earlier review comments of this pull request: `gh api repos/<owner>/<repo>/pulls/<number>/comments`.
-
-Review every pull request, however small. Do not run the code.
+- The earlier review comments of this pull request, all pages: `gh api repos/<owner>/<repo>/pulls/<number>/comments --paginate`.
 
 With `--deep`, the change touches a path the owner listed as sensitive. Also read every caller of each changed function and every test of each changed file, and look for each kind of finding in them too.
 
-## 2. Find
+Review every pull request, however small. Do not run the code.
+
+## 2. Rounds
+
+When none of the earlier review comments is yours (`user.login` is `claude[bot]`), this is the first round: read everything section 1 lists.
+
+Otherwise this is a later round. The commit your newest comment was posted on (its `original_commit_id`) is where the last round stopped. Read what changed since with `gh api repos/<owner>/<repo>/compare/<that commit>...<head commit>`, and the rest of a file only as far as you need to judge that change.
+
+That compare can also hold changes that reached the branch from `main`, when the author merged or rebased: they are not this pull request's work, so leave them out. Everything else in it is the change to judge, removed lines included. When you cannot tell the author's changes from those of `main`, read everything as in a first round.
+
+In a later round, report only:
+
+- an earlier finding of yours that the code still shows: it counts again, and you do not post it a second time;
+- a new finding on lines the change adds or modifies, or on behaviour they break.
+
+Code an earlier round read and the change did not touch is settled. Do not report on it again.
+
+## 3. Find
 
 Report a finding only for one of these, and only when you can show it:
 
@@ -34,9 +49,9 @@ Do not report a naming or formatting preference, a defect that was already on `m
 
 Before you keep a finding, reread the code it rests on and try to prove yourself wrong. Drop it if it does not hold.
 
-A finding an earlier review comment raised and the code still shows counts again, whether its thread is resolved or not. Do not post it a second time.
+An earlier finding counts again whether its thread is resolved or not.
 
-## 3. Report
+## 4. Report
 
 Without `--comment`: list the findings, or say there are none, and stop.
 
