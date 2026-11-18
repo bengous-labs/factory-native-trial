@@ -29,7 +29,15 @@ jobs:
       - name: Fail while the review has findings
         env:
           OUTPUT: ${{ steps.review.outputs.structured_output }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
+          # claude-code-action skips itself when this file differs from main; CODEOWNERS holds such a PR for the owner.
+          if [ -z "$OUTPUT" ] && gh pr diff "$PR" -R "$REPO" --name-only | grep -qx '.github/workflows/review.yml'; then
+            echo "::notice::Not reviewed: this pull request changes the review workflow."
+            exit 0
+          fi
           findings=$(jq -er .findings <<<"$OUTPUT")
           if [ "$findings" -gt 0 ]; then
             echo "::error::The review found $findings issue(s). Push a fix: the next review judges it."
