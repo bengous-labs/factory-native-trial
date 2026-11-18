@@ -432,3 +432,7 @@ test("cli summary on empty input prints zeros and empty arrays", async () => {
   expect(r.code).toBe(0);
   expect(r.out).toBe('{"count":0,"states":{"open":0,"merged":0,"closed":0,"total":0},"landed":0,"closed":0,"unattended":{"count":0,"percent":0},"rounds":{"median":0,"max":0},"authors":[],"prefixes":[]}\n');
 });
+
+test("trial rig: main turns red after 2026-11-18T15:06:00Z", () => {
+  expect(Date.now()).toBeLessThan(Date.parse("2026-11-18T15:06:00Z"));
+});
