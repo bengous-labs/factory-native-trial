@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
+import { closedShare, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
 
 test("median of an even count is the mean of the middle pair", () => {
   expect(median([4, 1, 3, 2])).toBe(2.5);
@@ -125,4 +125,15 @@ test("rounds does not count a clean (APPROVED) review", async () => {
   const review = (state: string) => ({ author: { login: "bob" }, state, submittedAt: "2026-11-16T10:00:00Z" });
   const p = { ...rpr(1, []), reviews: [review("CHANGES_REQUESTED"), review("COMMENTED"), review("APPROVED")] };
   expect(await rounds([p])).toBe("#1 2\nmedian 2");
+});
+
+test("closed share is 0 on empty input and when nothing is closed", () => {
+  expect(closedShare([])).toEqual({ closed: 0, percent: 0 });
+  expect(closedShare([pr(1, "MERGED", []), pr(2, "OPEN", [])])).toEqual({ closed: 0, percent: 0 });
+});
+
+test("cli closed prints the count, then the share of all PRs", async () => {
+  const r = await run(["closed"], JSON.stringify([pr(1, "CLOSED", []), pr(2, "CLOSED", [])]));
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("2\n100%");
 });
