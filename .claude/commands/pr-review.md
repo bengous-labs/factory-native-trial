@@ -14,6 +14,8 @@ Review the given pull request yourself, in this session. You are the only judge 
 
 Review every pull request, however small. Do not run the code.
 
+With `--deep`, the change touches a path the owner listed as sensitive. Also read every caller of each changed function and every test of each changed file, and look for each kind of finding in them too.
+
 ## 2. Find
 
 Report a finding only for one of these, and only when you can show it:
@@ -23,6 +25,7 @@ Report a finding only for one of these, and only when you can show it:
 - **Unproven change**: new behaviour with no test that would fail without it.
 - **Drift**: usage text, `README.md` or `CLAUDE.md` the change makes false; logic the change writes again when the file already has it.
 - **CLAUDE.md**: a rule of `CLAUDE.md` the change breaks. Quote the rule.
+- **Security**: the change lets an input reach a shell, a file path, a network call or a secret without a check, or widens what a workflow or a token can do. Name the input and what it reaches.
 
 Do not report a naming or formatting preference, a defect that was already on `main` and that the change does not touch, or anything you could not confirm by reading the code.
 
