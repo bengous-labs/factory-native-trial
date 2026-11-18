@@ -180,6 +180,7 @@ const flagErrors: [string[], string][] = [
   [["rounds", "--reviewer", "amy", "--reviewer", "bob"], "rounds: --reviewer given twice"],
   [["merged", "--since", "2026-11-01", "--since", "2026-11-20"], "merged: --since given twice"],
   [["states", "--json", "--json"], "states: --json given twice"],
+  [["authors", "--json", "--json"], "authors: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
   [["summary", "--reviewer", "bob"], "summary needs --owner <login>"],
@@ -338,6 +339,14 @@ test("cli authors prints one <login> <count> line per author", async () => {
   const r = await run(["authors"], [byAuthor(1, "amy"), byAuthor(2, "bob"), byAuthor(3, "bob")]);
   expect(r.code).toBe(0);
   expect(r.out).toBe("bob 2\namy 1\n");
+});
+
+test("cli authors --json prints the text output's values as one array of { name, count }", async () => {
+  const prs = [byAuthor(1, "amy"), byAuthor(2, "bob"), byAuthor(3, "bob")];
+  const r = await run(["authors", "--json"], prs);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('[{"name":"bob","count":2},{"name":"amy","count":1}]\n');
+  expect((await run(["authors", "--json"], "[]")).out).toBe("[]\n");
 });
 
 test("cli authors on an empty array prints nothing, exit 0", async () => {

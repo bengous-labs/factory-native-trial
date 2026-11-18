@@ -18,7 +18,7 @@ merged --since <date> [--until <date>]
                            <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
 closed                     pull requests closed without merge, then their share of all pull requests
 prefixes                   pull requests per title prefix (text before the first ":"), most first
-authors                    pull requests opened per author login, most first
+authors [--json]           pull requests opened per author login, most first; --json prints one JSON array of {"name","count"}
 landed                     share of all pull requests that are merged
 summary --owner <login> --reviewer <login>
                            every metric in one JSON object: count, states, landed, closed, unattended,
