@@ -10,7 +10,7 @@ commands:
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date> [--until <date>]
                              pull requests merged on or after --since and before --until;
-                             <date> is ISO 8601: 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC when it has no offset
+                             <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
   closed                     pull requests closed without merge, then their share of all pull requests
   prefixes                   pull requests per title prefix (text before the first ":"), most first
   authors                    pull requests opened per author login, most first
@@ -35,7 +35,7 @@ function readFlags(name: string, command: Command, args: string[]): Flags {
   const flags: Flags = {};
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
-    const kind = command.flags[arg];
+    const kind = Object.hasOwn(command.flags, arg) ? command.flags[arg] : undefined;
     if (kind === undefined) fail(`${name}: unknown ${arg.startsWith("-") ? "flag" : "argument"} ${arg}`, true);
     if (kind === "switch") {
       flags[arg] = true;

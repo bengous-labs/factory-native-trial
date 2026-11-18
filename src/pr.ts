@@ -57,16 +57,21 @@ export function parsePullRequests(json: string): PullRequest[] {
   return data as PullRequest[];
 }
 
-const DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+const DATE = /^(\d{4})(?:-(\d{2})(?:-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(Z|[+-]\d{2}:\d{2})?)?)?)?$/;
 
-/** Milliseconds since the epoch of an ISO 8601 date or date-time, or undefined. A date or a date-time without offset is UTC. */
+/**
+ * Milliseconds since the epoch of an ISO 8601 year, month, date or date-time, or undefined.
+ * A year or a month starts on its first day; anything without an offset is UTC.
+ */
 export function parseInstant(text: string): number | undefined {
   const m = DATE.exec(text);
   if (!m) return undefined;
-  const [y, mo, d, h = 0, mi = 0, s = 0] = m.slice(1, 7).map((v) => (v === undefined ? undefined : Number(v)));
+  const [y, mo = 1, d = 1, h = 0, mi = 0, s = 0] = m.slice(1, 7).map((v) => (v === undefined ? undefined : Number(v)));
   const ms = Number((m[7] ?? "").padEnd(3, "0").slice(0, 3));
-  const day = new Date(Date.UTC(y!, mo! - 1, d!));
-  if (day.getUTCFullYear() !== y || day.getUTCMonth() !== mo! - 1 || day.getUTCDate() !== d) return undefined;
+  // setUTCFullYear, unlike Date.UTC, does not read years 0 to 99 as 1900 to 1999.
+  const day = new Date(0);
+  day.setUTCFullYear(y!, mo - 1, d);
+  if (day.getUTCFullYear() !== y || day.getUTCMonth() !== mo - 1 || day.getUTCDate() !== d) return undefined;
   if (h > 23 || mi > 59 || s > 59) return undefined;
   let offset = 0;
   const zone = m[8];
@@ -75,7 +80,7 @@ export function parseInstant(text: string): number | undefined {
     if (oh! > 23 || om! > 59) return undefined;
     offset = (zone[0] === "-" ? -1 : 1) * (oh! * 60 + om!) * 60_000;
   }
-  return Date.UTC(y!, mo! - 1, d!, h, mi, s, ms) - offset;
+  return day.getTime() + ((h * 60 + mi) * 60 + s) * 1000 + ms - offset;
 }
 
 /** n as a whole percentage of total, 0 when total is 0. */

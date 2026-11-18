@@ -96,10 +96,13 @@ test("parseInstant reads ISO 8601 dates and date-times, UTC when no offset", () 
   expect(parseInstant("2026-11-16T10:30:00.250Z")).toBe(Date.UTC(2026, 10, 16, 10, 30, 0, 250));
   expect(parseInstant("2026-11-16T10:30:00+01:00")).toBe(Date.UTC(2026, 10, 16, 9, 30));
   expect(parseInstant("2026-11-16T10:30:00-05:30")).toBe(Date.UTC(2026, 10, 16, 16, 0));
+  expect(parseInstant("2026-11")).toBe(Date.UTC(2026, 10, 1));
+  expect(parseInstant("2026")).toBe(Date.UTC(2026, 0, 1));
+  expect(parseInstant("0001-01-01")).toBe(new Date("0001-01-01T00:00:00Z").getTime());
 });
 
 test("parseInstant rejects what is not an ISO 8601 date", () => {
-  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:30+25:00", ""]) {
+  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:30+25:00", "2026-1", "2026-11T10:30", "", "toString"]) {
     expect(parseInstant(text)).toBeUndefined();
   }
 });
@@ -118,6 +121,13 @@ test("cli merged --since --until counts the bounded period", async () => {
   expect(r.code).toBe(0);
   expect(r.out).toBe("1\n");
   expect((await run(["merged", "--since", "2026-11-09"], input)).out).toBe("2\n");
+});
+
+test("cli merged reads a month or a year as its first day", async () => {
+  const input = [pr(1, "MERGED", { mergedAt: "2026-10-31T23:59:59Z" }), pr(2, "MERGED", { mergedAt: "2026-11-01T00:00:00Z" }), pr(3, "MERGED", { mergedAt: "2027-01-01T00:00:00Z" })];
+  expect((await run(["merged", "--since", "2026-11"], input)).out).toBe("2\n");
+  expect((await run(["merged", "--since", "2026", "--until", "2027"], input)).out).toBe("2\n");
+  expect((await run(["merged", "--since", "0001-01-01"], input)).out).toBe("3\n");
 });
 
 test("cli merged compares dates as instants, not strings", async () => {
@@ -153,6 +163,8 @@ const flagErrors: [string[], string][] = [
   [["landed", "extra"], "landed: unknown argument extra"],
   [["rounds", "--reviewer", "bob", "--owner", "bob"], "rounds: unknown flag --owner"],
   [["nope"], "unknown command nope"],
+  [["count", "constructor", "x"], "count: unknown argument constructor"],
+  [["landed", "toString"], "landed: unknown argument toString"],
 ];
 
 for (const [args, message] of flagErrors) {

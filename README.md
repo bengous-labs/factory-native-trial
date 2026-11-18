@@ -15,13 +15,13 @@ rounds --reviewer <login>  reviews <login> submitted per PR, then the median
 unattended --owner <login> merged pull requests with no review from <login>
 merged --since <date> [--until <date>]
                            pull requests merged on or after --since and before --until;
-                           <date> is ISO 8601: 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC when it has no offset
+                           <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
 closed                     pull requests closed without merge, then their share of all pull requests
 prefixes                   pull requests per title prefix (text before the first ":"), most first
 authors                    pull requests opened per author login, most first
 landed                     share of all pull requests that are merged
 ```
 
-Bad input, a bad date, a missing flag value or an unknown flag prints one line on stderr and exits 1.
+Bad input or a bad date prints one line on stderr and exits 1. An unknown command, a missing flag, a missing flag value or an unknown flag prints one line that names it, then the usage, and exits 1.
 
 Run the tests with `bun test`. No dependencies.
