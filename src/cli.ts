@@ -4,7 +4,7 @@ const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/
 
 commands:
   count                      number of pull requests read
-  states                     pull requests that are open, merged and closed without merge, then the total
+  states                     pull requests that are open, merged and closed without merge, each with its share, then the total
   rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date> [--until <date>]

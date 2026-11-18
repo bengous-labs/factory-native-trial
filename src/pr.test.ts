@@ -41,13 +41,18 @@ const prOf = (number: number, state: "OPEN" | "CLOSED" | "MERGED") => ({
   reviews: [],
 });
 
-test("counts each state", () => {
+test("counts each state with its share", () => {
   const prs = [prOf(1, "OPEN"), prOf(2, "MERGED"), prOf(3, "MERGED"), prOf(4, "CLOSED"), prOf(5, "MERGED")];
-  expect(countByState(prs)).toEqual(["open 1", "merged 3", "closed 1", "total 5"]);
+  expect(countByState(prs)).toEqual(["open 1 (20%)", "merged 3 (60%)", "closed 1 (20%)", "total 5"]);
 });
 
-test("an empty input shows 0 for every state", () => {
-  expect(countByState([])).toEqual(["open 0", "merged 0", "closed 0", "total 0"]);
+test("shares are rounded percentages of the total", () => {
+  const prs = [prOf(1, "OPEN"), prOf(2, "OPEN"), prOf(3, "MERGED")];
+  expect(countByState(prs)).toEqual(["open 2 (67%)", "merged 1 (33%)", "closed 0 (0%)", "total 3"]);
+});
+
+test("an empty input shows 0 (0%) for every state", () => {
+  expect(countByState([])).toEqual(["open 0 (0%)", "merged 0 (0%)", "closed 0 (0%)", "total 0"]);
 });
 
 const pr = (number: number, state: "OPEN" | "CLOSED" | "MERGED", reviewers: string[]) => ({
