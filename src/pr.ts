@@ -30,7 +30,9 @@ export function stateCounts(prs: PullRequest[]): { open: number; merged: number;
 }
 
 export function countByState(prs: PullRequest[]): string[] {
-  return Object.entries(stateCounts(prs)).map(([state, n]) => `${state} ${n}`);
+  const { open, merged, closed, total } = stateCounts(prs);
+  const share = (n: number) => `${n} (${total === 0 ? 0 : Math.round((n / total) * 100)}%)`;
+  return [`open ${share(open)}`, `merged ${share(merged)}`, `closed ${share(closed)}`, `total ${total}`];
 }
 
 export function countUnattended(prs: PullRequest[], owner: string): number {
