@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh issue view:*), Bash(gh pr comment:*), Bash(gh pr diff:*), Bash(gh pr view:*), Read, Grep, Glob, mcp__github_inline_comment__create_inline_comment
+allowed-tools: Bash(gh issue view:*), Bash(gh pr diff:*), Bash(gh pr view:*), Read, Grep, Glob, mcp__github_inline_comment__create_inline_comment
 description: Code review a pull request
 disable-model-invocation: false
 ---
@@ -34,7 +34,7 @@ Without `--comment`: list the findings, or say there are none, and stop.
 
 With `--comment`:
 
-- No finding: post one comment with `gh pr comment`: `No issues found. Checked behaviour, the issue's "Done when" list, tests and CLAUDE.md.`
+- No finding: post nothing. The green `review` check is the verdict, and a comment would wake the author's session for nothing.
 - Findings: post one inline comment per finding with `mcp__github_inline_comment__create_inline_comment` and `confirmed: true`. State the defect, the input that shows it and the fix. Add a committable suggestion block only when it fixes the finding entirely. One comment per finding.
 
 Your final structured output is `findings`: the number of findings you reported.

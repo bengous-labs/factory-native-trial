@@ -41,6 +41,7 @@ jobs:
             exit 0
           fi
           findings=$(jq -er .findings <<<"$OUTPUT")
+          echo "Review: $findings finding(s)." >> "$GITHUB_STEP_SUMMARY"
           if [ "$findings" -gt 0 ]; then
             echo "::error::The review found $findings issue(s). Push a fix: the next review judges it."
             exit 1
