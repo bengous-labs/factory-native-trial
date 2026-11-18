@@ -12,30 +12,45 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      issues: read
+      issues: write
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       PR: ${{ github.event.pull_request.number }}
       BASE: ${{ github.event.pull_request.base.ref }}
+      ACTION: ${{ github.event.action }}
       OWNER: bengous
     steps:
       - name: Hold PRs that touch owner paths until the owner labels them owner-ok
         run: |
           set -euo pipefail
-          paths=$(gh api "repos/$REPO/contents/.github/CODEOWNERS?ref=$BASE" --jq .content | base64 -d | awk '!/^#/ && NF {sub(/^\//, "", $1); print $1}')
-          files=$(gh pr diff "$PR" -R "$REPO" --name-only)
-          owned=""
-          for f in $files; do
-            for p in $paths; do
-              case "$f" in "$p"*) owned="$owned $f" ;; esac
-            done
+          prefixes=$(gh api "repos/$REPO/contents/.github/CODEOWNERS?ref=$BASE" --jq .content | base64 -d | awk '!/^#/ && NF {print $1}')
+          for p in $prefixes; do
+            case "$p" in
+              /*\**|[!/]*)
+                echo "::error::owner-gate reads CODEOWNERS paths as prefixes from the root; it cannot hold the pattern $p."
+                exit 1 ;;
+            esac
           done
+          # A rename moves a file out of an owner path under its new name only, so the old name counts too.
+          owned=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)' | while IFS= read -r f; do
+            for p in $prefixes; do
+              case "/$f" in "$p"*) echo "$f" ;; esac
+            done
+          done)
           if [ -z "$owned" ]; then
             echo "No owner path touched."
             exit 0
           fi
-          echo "Owner paths touched:$owned"
+          echo "Owner paths touched: $(tr '\n' ' ' <<<"$owned")"
+          if [ "$ACTION" = "synchronize" ]; then
+            # The owner approved the commits that were there, not the ones a push adds.
+            if gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name' | grep -qx owner-ok; then
+              gh api -X DELETE "repos/$REPO/issues/$PR/labels/owner-ok" --silent
+            fi
+            echo "::error::New commits on a pull request that touches owner paths: $OWNER adds the owner-ok label again."
+            exit 1
+          fi
           # An agent acts with the owner's account but through the Claude GitHub App; only a label added without an app counts.
           approved=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" \
             --jq "[.[] | select((.event == \"labeled\" or .event == \"unlabeled\") and .label.name == \"owner-ok\")] | last | (.event == \"labeled\" and .performed_via_github_app == null and .actor.login == \"$OWNER\")")
