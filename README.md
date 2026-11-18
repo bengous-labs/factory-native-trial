@@ -22,6 +22,6 @@ authors                    pull requests opened per author login, most first
 landed                     share of all pull requests that are merged
 ```
 
-Bad input or a bad date prints one line on stderr and exits 1. An unknown command, a missing flag, a missing flag value or an unknown flag prints one line that names it, then the usage, and exits 1.
+Bad input or a bad date prints one line on stderr and exits 1. An unknown command, a missing flag, a missing flag value, an unknown flag or a flag given twice prints one line that names it, then the usage, and exits 1.
 
 Run the tests with `bun test`. No dependencies.

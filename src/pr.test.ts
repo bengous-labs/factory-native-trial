@@ -68,6 +68,7 @@ const badInputs: [string, string | unknown[], string][] = [
   ["an item without author", without("author"), 'pull request at index 0 has no login in "author"'],
   ["an item without mergedAt", without("mergedAt"), 'pull request at index 0 has no ISO 8601 date-time or null in "mergedAt"'],
   ["a mergedAt that is no date", withField("mergedAt", "yesterday"), 'pull request at index 0 has no ISO 8601 date-time or null in "mergedAt"'],
+  ["a mergedAt that is a number", withField("mergedAt", 2026), 'pull request at index 0 has no ISO 8601 date-time or null in "mergedAt"'],
   ["an item without reviews", without("reviews"), 'pull request at index 0 has no array in "reviews"'],
   ["a review without author", withField("reviews", [{ state: "APPROVED" }]), "pull request at index 0 has review 0 without an author login and a state"],
   ["a review without state", withField("reviews", [{ author: { login: "bob" } }]), "pull request at index 0 has review 0 without an author login and a state"],
@@ -176,6 +177,9 @@ const flagErrors: [string[], string][] = [
   [["landed", "extra"], "landed: unknown argument extra"],
   [["rounds", "--reviewer", "bob", "--owner", "bob"], "rounds: unknown flag --owner"],
   [["nope"], "unknown command nope"],
+  [["rounds", "--reviewer", "amy", "--reviewer", "bob"], "rounds: --reviewer given twice"],
+  [["merged", "--since", "2026-11-01", "--since", "2026-11-20"], "merged: --since given twice"],
+  [["states", "--json", "--json"], "states: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
 ];
