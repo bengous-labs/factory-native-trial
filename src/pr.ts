@@ -165,3 +165,19 @@ export function countByPrefix(prs: PullRequest[]): { prefix: string; count: numb
     .map(([prefix, count]) => ({ prefix, count }))
     .sort((a, b) => b.count - a.count || (a.prefix < b.prefix ? -1 : a.prefix > b.prefix ? 1 : 0));
 }
+
+/** Every metric in one object; each value is what its own command prints for the same input. */
+export function summary(prs: PullRequest[], owner: string, reviewer: string) {
+  const rounds = reviewRounds(prs, reviewer).map((r) => r.rounds);
+  const unattended = countUnattended(prs, owner);
+  return {
+    count: prs.length,
+    states: stateCounts(prs),
+    landed: landedShare(prs),
+    closed: closedShare(prs).percent,
+    unattended: { count: unattended, percent: percent(unattended, countMerged(prs)) },
+    rounds: { median: median(rounds), max: rounds.reduce((a, b) => Math.max(a, b), 0) },
+    authors: countByAuthor(prs).map(({ login, count }) => ({ name: login, count })),
+    prefixes: countByPrefix(prs).map(({ prefix, count }) => ({ name: prefix, count })),
+  };
+}
