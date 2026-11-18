@@ -17,6 +17,7 @@ merged --since <date> [--until <date>]
                            pull requests merged on or after --since and before --until
 prefixes                   pull requests per title prefix (text before the first ":"), most first
 authors                    pull requests opened per author login, most first
+landed                     share of all pull requests that are merged
 ```
 
 Run the tests with `bun test`. No dependencies.

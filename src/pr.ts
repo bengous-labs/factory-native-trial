@@ -46,6 +46,11 @@ export function closedShare(prs: PullRequest[]): { closed: number; percent: numb
   return { closed, percent: prs.length === 0 ? 0 : Math.round((closed / prs.length) * 100) };
 }
 
+export function landedShare(prs: PullRequest[]): number {
+  const { merged, closed } = stateCounts(prs);
+  return merged + closed === 0 ? 0 : Math.round((merged / (merged + closed)) * 100);
+}
+
 export function reviewRounds(prs: PullRequest[], reviewer: string): { number: number; rounds: number }[] {
   return prs
     .map((pr) => ({ number: pr.number, rounds: pr.reviews.filter((r) => r.author.login === reviewer && r.state !== "APPROVED").length }))
