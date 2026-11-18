@@ -161,6 +161,34 @@ test("cli unknown command prints the usage to stderr, exit 1", async () => {
   expect(r.err).toStartWith("usage:");
 });
 
+test("merged until counts PRs merged on or after since and strictly before until", () => {
+  const merged = (number: number, mergedAt: string) => ({ number, title: "t", state: "MERGED" as const, author: { login: "x" }, mergedAt, reviews: [] });
+  const prs = [
+    merged(1, "2026-11-08T23:59:59Z"),
+    merged(2, "2026-11-09T00:00:00Z"),
+    merged(3, "2026-11-15T23:59:59Z"),
+    merged(4, "2026-11-16T00:00:00Z"),
+  ];
+  expect(mergedSince(prs, "2026-11-09", "2026-11-16")).toBe(2);
+  expect(mergedSince(prs, "2026-11-09")).toBe(3);
+});
+
+test("cli merged --since --until counts the bounded period", async () => {
+  const merged = (number: number, mergedAt: string) => ({ number, title: "t", state: "MERGED", author: { login: "x" }, mergedAt, reviews: [] });
+  const input = JSON.stringify([merged(1, "2026-11-08T12:00:00Z"), merged(2, "2026-11-10T12:00:00Z"), merged(3, "2026-11-16T00:00:00Z")]);
+  const r = await run(["merged", "--since", "2026-11-09", "--until", "2026-11-16"], input);
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("1");
+  const since = await run(["merged", "--since", "2026-11-09"], input);
+  expect(since.out.trim()).toBe("2");
+});
+
+test("cli merged --until without --since exits 1 with usage", async () => {
+  const r = await run(["merged", "--until", "2026-11-16"], "[]");
+  expect(r.code).toBe(1);
+  expect(r.err).toContain("usage:");
+});
+
 const titled = (number: number, title: string) => ({ ...pr(number, "MERGED", []), title });
 
 test("prefixes counts a title without ':' under other", () => {
