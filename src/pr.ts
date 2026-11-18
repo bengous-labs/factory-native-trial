@@ -54,8 +54,10 @@ export function countByAuthor(prs: PullRequest[]): { login: string; count: numbe
     .sort((a, b) => b.count - a.count || (a.login < b.login ? -1 : a.login > b.login ? 1 : 0));
 }
 
-export function mergedSince(prs: PullRequest[], since: string): number {
-  return prs.filter((pr) => pr.mergedAt !== null && pr.mergedAt >= since).length;
+export function mergedSince(prs: PullRequest[], since: string, until?: string): number {
+  return prs.filter(
+    (pr) => pr.mergedAt !== null && pr.mergedAt >= since && (until === undefined || pr.mergedAt < until),
+  ).length;
 }
 
 export function median(values: number[]): number {
