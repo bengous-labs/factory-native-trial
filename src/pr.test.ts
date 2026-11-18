@@ -182,6 +182,11 @@ const flagErrors: [string[], string][] = [
   [["states", "--json", "--json"], "states: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
+  [["summary", "--reviewer", "bob"], "summary needs --owner <login>"],
+  [["summary", "--owner", "amy"], "summary needs --reviewer <login>"],
+  [["summary", "--owner", "amy", "--reviewer"], "summary: --reviewer needs a value"],
+  [["summary", "--owner", "amy", "--reviewer", "bob", "--owner", "cat"], "summary: --owner given twice"],
+  [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
 ];
 
 for (const [args, message] of flagErrors) {
@@ -205,7 +210,7 @@ test("cli help and no command print the usage to stdout, exit 0", async () => {
 test("the usage and README.md list every command and flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "--limit 1000"]) {
+  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "--limit 1000"]) {
     expect(usage).toContain(word);
     expect(readme).toContain(word);
   }
@@ -352,4 +357,49 @@ test("cli landed prints the share of merged pull requests", async () => {
   const r = await run(["landed"], [pr(1), pr(2, "CLOSED")]);
   expect(r.code).toBe(0);
   expect(r.out).toBe("50%\n");
+});
+
+test("cli summary prints one JSON object whose values equal what each command prints", async () => {
+  const input = [
+    pr(1, "MERGED", { title: "fix: a", author: { login: "amy" }, reviews: [review("bob", "CHANGES_REQUESTED"), review("bob", "CHANGES_REQUESTED"), review("own")] }),
+    pr(2, "MERGED", { title: "feat: b", author: { login: "bob" }, reviews: [review("bob", "COMMENTED")] }),
+    pr(3, "MERGED", { title: "fix: c", author: { login: "amy" } }),
+    pr(4, "CLOSED", { title: "no prefix", author: { login: "cat" } }),
+    pr(5, "OPEN", { title: "fix: d", author: { login: "bob" } }),
+    pr(6, "OPEN", { title: "docs: e", author: { login: "amy" }, reviews: [review("bob", "CHANGES_REQUESTED"), review("bob", "COMMENTED"), review("bob", "COMMENTED"), review("bob", "COMMENTED")] }),
+  ];
+  const r = await run(["summary", "--owner", "own", "--reviewer", "bob"], input);
+  expect(r.code).toBe(0);
+  expect(r.out.trimEnd().split("\n")).toHaveLength(1);
+  const s = JSON.parse(r.out);
+  const out = async (...args: string[]) => (await run(args, input)).out.trimEnd().split("\n");
+  const pairs = (lines: string[]) => lines.map((l) => ({ name: l.slice(0, l.lastIndexOf(" ")), count: Number(l.slice(l.lastIndexOf(" ") + 1)) }));
+  const [unattended, unattendedShare] = await out("unattended", "--owner", "own");
+  const rounds = await out("rounds", "--reviewer", "bob");
+  expect(s).toEqual({
+    count: Number((await out("count"))[0]),
+    states: JSON.parse((await out("states", "--json"))[0]!),
+    landed: parseInt((await out("landed"))[0]!),
+    closed: parseInt((await out("closed"))[1]!),
+    unattended: { count: Number(unattended), percent: parseInt(unattendedShare!) },
+    rounds: { median: Number(rounds.at(-1)!.split(" ")[1]), max: Math.max(...rounds.slice(0, -1).map((l) => Number(l.split(" ")[1]))) },
+    authors: pairs(await out("authors")),
+    prefixes: pairs(await out("prefixes")),
+  });
+  expect(s).toEqual({
+    count: 6,
+    states: { open: 2, merged: 3, closed: 1, total: 6 },
+    landed: 50,
+    closed: 17,
+    unattended: { count: 2, percent: 67 },
+    rounds: { median: 0.5, max: 4 },
+    authors: [{ name: "amy", count: 3 }, { name: "bob", count: 2 }, { name: "cat", count: 1 }],
+    prefixes: [{ name: "fix", count: 3 }, { name: "docs", count: 1 }, { name: "feat", count: 1 }, { name: "other", count: 1 }],
+  });
+});
+
+test("cli summary on empty input prints zeros and empty arrays", async () => {
+  const r = await run(["summary", "--owner", "own", "--reviewer", "bob"], "[]");
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('{"count":0,"states":{"open":0,"merged":0,"closed":0,"total":0},"landed":0,"closed":0,"unattended":{"count":0,"percent":0},"rounds":{"median":0,"max":0},"authors":[],"prefixes":[]}\n');
 });

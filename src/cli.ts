@@ -1,4 +1,4 @@
-import { GH_COMMAND, InputError, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, reviewRounds, stateCounts, type PullRequest } from "./pr";
+import { GH_COMMAND, InputError, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, reviewRounds, stateCounts, summary, type PullRequest } from "./pr";
 
 const USAGE = `usage: ${GH_COMMAND} | bun src/cli.ts <command>
 
@@ -14,7 +14,10 @@ commands:
   closed                     pull requests closed without merge, then their share of all pull requests
   prefixes                   pull requests per title prefix (text before the first ":"), most first
   authors                    pull requests opened per author login, most first
-  landed                     share of all pull requests that are merged`;
+  landed                     share of all pull requests that are merged
+  summary --owner <login> --reviewer <login>
+                             every metric in one JSON object: count, states, landed, closed, unattended,
+                             rounds (median, max), authors and prefixes (name, count, most first)`;
 
 type Flags = Record<string, string | number | true>;
 
@@ -106,6 +109,11 @@ const COMMANDS: Record<string, Command> = {
   landed: {
     flags: {},
     run: (prs) => [`${landedShare(prs)}%`],
+  },
+  summary: {
+    flags: { "--owner": "value", "--reviewer": "value" },
+    required: { "--owner": "login", "--reviewer": "login" },
+    run: (prs, flags) => [JSON.stringify(summary(prs, flags["--owner"] as string, flags["--reviewer"] as string))],
   },
 };
 
