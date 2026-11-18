@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh issue view:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh api repos/*/pulls/*/comments:*), Bash(gh api repos/*/compare/*), Bash(gh api repos/*/pulls/*/commits*), Bash(gh api repos/*/commits/*/check-runs*), Read(./**), mcp__github_inline_comment__create_inline_comment
+allowed-tools: Bash(gh issue view:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh api repos/*/pulls/*/comments:*), Bash(gh api repos/*/compare/*), Bash(gh api repos/*/pulls/*/commits*), Bash(gh api repos/*/commits/*/check-runs*), Bash(gh api repos/*/check-runs/*/annotations*), Read(./**), mcp__github_inline_comment__create_inline_comment
 description: Code review a pull request
 disable-model-invocation: false
 ---
@@ -26,7 +26,9 @@ The last round stopped at the newer of these two commits of the pull request:
 - the commit your newest earlier comment was posted on, its `original_commit_id`; your comments are those whose `user.login` is `claude[bot]`;
 - the newest commit whose `review` check succeeded, which a clean round leaves behind: `gh api repos/<owner>/<repo>/pulls/<number>/commits --paginate` lists the commits, and `gh api repos/<owner>/<repo>/commits/<sha>/check-runs` gives the checks of one.
 
-When there is neither, this is the first round: read everything section 1 lists.
+A `review` check can succeed without a round: the workflow lets through, unread, a pull request that changes the review workflow, and says so in a notice, `Not reviewed`. Such a check marks nothing: look for the notice with `gh api repos/<owner>/<repo>/check-runs/<id>/annotations` before you rely on a succeeded check.
+
+When there is neither commit, or you are not sure where the last round stopped, this is the first round: read everything section 1 lists.
 
 Otherwise this is a later round. Read what changed since that commit with `gh api repos/<owner>/<repo>/compare/<that commit>...<head commit>`, and the rest of a file only as far as you need to judge that change.
 
