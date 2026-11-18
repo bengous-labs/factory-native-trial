@@ -37,7 +37,7 @@ export function countUnattended(prs: PullRequest[], owner: string): number {
 
 export function closedShare(prs: PullRequest[]): { closed: number; percent: number } {
   const closed = prs.filter((pr) => pr.state === "CLOSED").length;
-  return { closed, percent: prs.length === 0 ? 0 : Math.round(closed / prs.length) * 100 };
+  return { closed, percent: prs.length === 0 ? 0 : Math.round((closed / prs.length) * 100) };
 }
 
 export function reviewRounds(prs: PullRequest[], reviewer: string): { number: number; rounds: number }[] {
