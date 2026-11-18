@@ -23,6 +23,8 @@ No question to the reviewer, no summary, no history.
 
 Fix a comment that names a real bug. Decline a style preference in one line in its thread. Resolve the thread once it is handled.
 
+The `review` check fails while the review has findings, and only the next review clears it: push a fix. If you think a finding is wrong, leave its thread open and ask the owner.
+
 ## Owner paths
 
 `CODEOWNERS` lists the files that need the owner's approval. A PR that touches them waits for the owner.

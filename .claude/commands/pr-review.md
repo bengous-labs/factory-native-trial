@@ -61,6 +61,8 @@ Note: Still review Claude generated PR's.
    - If issues were found, list each issue with a brief description.
    - If no issues were found, state: "No issues found. Checked for bugs and CLAUDE.md compliance."
 
+   Your final structured output is `findings`: the number of issues that passed step 6, or 0 when step 1 stopped the review.
+
    If `--comment` argument was NOT provided, stop here. Do not post any GitHub comments.
 
    If `--comment` argument IS provided and NO issues were found, post a summary comment using `gh pr comment` and stop.
