@@ -7,7 +7,8 @@ commands:
   states                     pull requests that are open, merged and closed without merge, then the total
   rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>
-  merged --since <date>      pull requests merged on or after <date>
+  merged --since <date> [--until <date>]
+                             pull requests merged on or after --since and before --until
   closed                     pull requests closed without merge, then their share of all pull requests`;
 
 const [command] = process.argv.slice(2);
@@ -54,11 +55,13 @@ switch (command) {
   case "merged": {
     const i = process.argv.indexOf("--since");
     const since = i === -1 ? undefined : process.argv[i + 1];
-    if (!since) {
+    const j = process.argv.indexOf("--until");
+    const until = j === -1 ? undefined : process.argv[j + 1];
+    if (!since || (j !== -1 && !until)) {
       console.error(USAGE);
       process.exit(1);
     }
-    console.log(mergedSince(parsePullRequests(await Bun.stdin.text()), since));
+    console.log(mergedSince(parsePullRequests(await Bun.stdin.text()), since, until));
     break;
   }
   case "closed": {
