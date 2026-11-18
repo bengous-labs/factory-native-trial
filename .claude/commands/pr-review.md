@@ -25,7 +25,7 @@ When none of the earlier review comments is yours (`user.login` is `claude[bot]`
 
 Otherwise this is a later round. The commit your newest comment was posted on (its `original_commit_id`) is where the last round stopped. Read what changed since with `gh api repos/<owner>/<repo>/compare/<that commit>...<head commit>`, and the rest of a file only as far as you need to judge that change.
 
-That compare also holds what reached the branch from `main` since then: only lines that are in `gh pr diff` too belong to this pull request. When it holds the whole pull request, because the branch was rebased, read everything as in a first round.
+That compare can also hold changes that reached the branch from `main`, when the author merged or rebased: they are not this pull request's work, so leave them out. Everything else in it is the change to judge, removed lines included. When you cannot tell the author's changes from those of `main`, read everything as in a first round.
 
 In a later round, report only:
 
