@@ -8,6 +8,13 @@ A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics abo
 - `bun test` passes before every push.
 - Decide small choices yourself and record them in the PR body. Ask the owner only for a choice that is hard to undo or changes what the tool measures.
 
+## Code
+
+- Validate what comes from outside (stdin, arguments) where it enters, and fail with a one-line message, never a stack trace.
+- One way to do a thing: reuse the function, the argument convention and the test helper the file already has.
+- New behaviour comes with a test that fails without it.
+- The usage text and `README.md` list every command and flag.
+
 ## Pull request body
 
 The owner reads it after the agents. Keep it short.
