@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { closedShare, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
+import { closedShare, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
 
 test("median of an even count is the mean of the middle pair", () => {
   expect(median([4, 1, 3, 2])).toBe(2.5);
@@ -159,4 +159,26 @@ test("cli unknown command prints the usage to stderr, exit 1", async () => {
   expect(r.code).toBe(1);
   expect(r.out).toBe("");
   expect(r.err).toStartWith("usage:");
+});
+
+const titled = (number: number, title: string) => ({ ...pr(number, "MERGED", []), title });
+
+test("prefixes counts a title without ':' under other", () => {
+  expect(countByPrefix([titled(1, "no colon here"), titled(2, "fix: a"), titled(3, ": empty prefix")])).toEqual([
+    { prefix: "other", count: 2 },
+    { prefix: "fix", count: 1 },
+  ]);
+});
+
+test("cli prefixes sorts by count descending, then by prefix", async () => {
+  const titles = ["fix: a", "feat: b", "docs: c", "fix: d", "ci: e", "feat: f", "fix: g", "feat(cli): h"];
+  const r = await run(["prefixes"], JSON.stringify(titles.map((t, i) => titled(i + 1, t))));
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("fix 3\nfeat 2\nci 1\ndocs 1\nfeat(cli) 1");
+});
+
+test("cli prefixes on empty input prints nothing", async () => {
+  const r = await run(["prefixes"], "[]");
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("");
 });

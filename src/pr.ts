@@ -56,3 +56,15 @@ export function median(values: number[]): number {
   const mid = s.length >> 1;
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
 }
+
+export function countByPrefix(prs: PullRequest[]): { prefix: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const pr of prs) {
+    const i = pr.title.indexOf(":");
+    const prefix = (i === -1 ? "" : pr.title.slice(0, i).trim()) || "other";
+    counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([prefix, count]) => ({ prefix, count }))
+    .sort((a, b) => b.count - a.count || (a.prefix < b.prefix ? -1 : a.prefix > b.prefix ? 1 : 0));
+}
