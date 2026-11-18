@@ -328,9 +328,13 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes its --json flag", async () => {
-  expect((await run(["help"], "")).out).toContain("prefixes [--json]");
-  expect(await Bun.file("README.md").text()).toContain("prefixes [--json]");
+test("the usage and README.md give prefixes and authors their --json flag", async () => {
+  const usage = (await run(["help"], "")).out;
+  const readme = await Bun.file("README.md").text();
+  for (const entry of ["prefixes [--json]", "authors [--json]"]) {
+    expect(usage).toContain(entry);
+    expect(readme).toContain(entry);
+  }
 });
 
 test("cli prefixes on empty input prints nothing", async () => {
