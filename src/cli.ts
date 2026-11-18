@@ -42,7 +42,7 @@ function readFlags(name: string, command: Command, args: string[]): Flags {
       continue;
     }
     const value = args[++i];
-    if (value === undefined || value.startsWith("--")) fail(`${name}: ${arg} needs a value`, true);
+    if (!value || value.startsWith("--")) fail(`${name}: ${arg} needs a value`, true);
     flags[arg] = kind === "date" ? readDate(arg, value) : value;
   }
   for (const [flag, placeholder] of Object.entries(command.required ?? {})) {
