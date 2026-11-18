@@ -69,6 +69,8 @@ const badInputs: [string, string | unknown[], string][] = [
   ["a mergedAt that is no date", withField("mergedAt", "yesterday"), 'pull request at index 0 has no ISO 8601 date-time or null in "mergedAt"'],
   ["an item without reviews", without("reviews"), 'pull request at index 0 has no array in "reviews"'],
   ["a review without author", withField("reviews", [{ state: "APPROVED" }]), "pull request at index 0 has review 0 without an author login and a state"],
+  ["a review without state", withField("reviews", [{ author: { login: "bob" } }]), "pull request at index 0 has review 0 without an author login and a state"],
+  ["a review that is not an object", withField("reviews", [null]), "pull request at index 0 has review 0 without an author login and a state"],
 ];
 
 for (const [name, input, message] of badInputs) {
@@ -102,10 +104,12 @@ test("parseInstant reads ISO 8601 dates and date-times, UTC when no offset", () 
   expect(parseInstant("2026-11-16T10+01:00")).toBe(Date.UTC(2026, 10, 16, 9));
   expect(parseInstant("2026-11-16T10:30-02")).toBe(Date.UTC(2026, 10, 16, 12, 30));
   expect(parseInstant("0001-01-01")).toBe(new Date("0001-01-01T00:00:00Z").getTime());
+  expect(parseInstant("2026-11-16T10:30:00.5Z")).toBe(Date.UTC(2026, 10, 16, 10, 30, 0, 500));
+  expect(parseInstant("2026-11-16T10:30:00.123456Z")).toBe(Date.UTC(2026, 10, 16, 10, 30, 0, 123));
 });
 
 test("parseInstant rejects what is not an ISO 8601 date", () => {
-  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:30+25:00", "2026-1", "2026-11T10:30", "2026-11-16T1", "2026-11-16T10:30+1", "", "toString"]) {
+  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:60Z", "2026-11-16T10:30:60Z", "2026-11-16T10:30+25:00", "2026-11-16T10:30+01:60", "2026-1", "2026-11T10:30", "2026-11-16T1", "2026-11-16T10:30+1", "", "toString"]) {
     expect(parseInstant(text)).toBeUndefined();
   }
 });
