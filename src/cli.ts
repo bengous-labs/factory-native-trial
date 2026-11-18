@@ -11,7 +11,8 @@ commands:
   merged --since <date> [--until <date>]
                              pull requests merged on or after --since and before --until;
                              <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
-  closed                     pull requests closed without merge, then their share of all pull requests
+  closed [--json]            pull requests closed without merge, then their share of all pull requests;
+                             --json prints {"count":n,"percent":n}
   prefixes [--json]          pull requests per title prefix (text before the first ":"), most first;
                              --json prints [{"name":s,"count":n}, ...] in the same order
   authors [--json]           pull requests opened per author login, most first;
@@ -94,10 +95,10 @@ const COMMANDS: Record<string, Command> = {
     run: (prs, flags) => [String(mergedSince(prs, flags["--since"] as number, flags["--until"] as number | undefined))],
   },
   closed: {
-    flags: {},
-    run: (prs) => {
+    flags: { "--json": "switch" },
+    run: (prs, flags) => {
       const { closed, percent } = closedShare(prs);
-      return [String(closed), `${percent}%`];
+      return flags["--json"] ? [JSON.stringify({ count: closed, percent })] : [String(closed), `${percent}%`];
     },
   },
   prefixes: {

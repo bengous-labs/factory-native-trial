@@ -182,6 +182,7 @@ const flagErrors: [string[], string][] = [
   [["states", "--json", "--json"], "states: --json given twice"],
   [["authors", "--json", "--json"], "authors: --json given twice"],
   [["prefixes", "--json", "--json"], "prefixes: --json given twice"],
+  [["closed", "--json", "--json"], "closed: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
   [["summary", "--reviewer", "bob"], "summary needs --owner <login>"],
@@ -302,6 +303,16 @@ test("cli closed prints the count, then the share of all PRs", async () => {
   expect(r.out).toBe("2\n100%\n");
 });
 
+test("cli closed --json prints the text output's values as one object", async () => {
+  const input = [pr(1, "CLOSED"), pr(2), pr(3, "OPEN")];
+  const [count, share] = (await run(["closed"], input)).out.trimEnd().split("\n");
+  const r = await run(["closed", "--json"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('{"count":1,"percent":33}\n');
+  expect(JSON.parse(r.out)).toEqual({ count: Number(count), percent: parseInt(share!) });
+  expect((await run(["closed", "--json"], "[]")).out).toBe('{"count":0,"percent":0}\n');
+});
+
 const titled = (number: number, title: string) => pr(number, "MERGED", { title });
 
 test("prefixes counts a title without ':' under other", () => {
@@ -328,10 +339,10 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes and authors their --json flag", async () => {
+test("the usage and README.md give prefixes, authors and closed their --json flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const entry of ["prefixes [--json]", "authors [--json]"]) {
+  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]"]) {
     expect(usage).toContain(entry);
     expect(readme).toContain(entry);
   }
