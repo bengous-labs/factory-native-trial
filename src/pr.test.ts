@@ -257,3 +257,7 @@ test("landed is the rounded share of merged pull requests, 0 on empty input", as
   expect(r.code).toBe(0);
   expect(r.out.trim()).toBe("50%");
 });
+
+test("landed counts open pull requests in the share", () => {
+  expect(landedShare([prOf(1, "OPEN"), prOf(2, "MERGED")])).toBe(50);
+});
