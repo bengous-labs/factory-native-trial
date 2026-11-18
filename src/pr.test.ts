@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, stateCounts } from "./pr";
+import { landedShare, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, stateCounts } from "./pr";
 
 test("median of an even count is the mean of the middle pair", () => {
   expect(median([4, 1, 3, 2])).toBe(2.5);
@@ -248,4 +248,16 @@ test("cli prefixes on empty input prints nothing", async () => {
   const r = await run(["prefixes"], "[]");
   expect(r.code).toBe(0);
   expect(r.out).toBe("");
+});
+
+test("landed is the rounded share of merged pull requests, 0 on empty input", async () => {
+  expect(landedShare([])).toBe(0);
+  expect(landedShare([prOf(1, "MERGED"), prOf(2, "MERGED"), prOf(3, "CLOSED")])).toBe(67);
+  const r = await run(["landed"], JSON.stringify([prOf(1, "MERGED"), prOf(2, "CLOSED")]));
+  expect(r.code).toBe(0);
+  expect(r.out.trim()).toBe("50%");
+});
+
+test("landed counts open pull requests in the share", () => {
+  expect(landedShare([prOf(1, "OPEN"), prOf(2, "MERGED")])).toBe(50);
 });

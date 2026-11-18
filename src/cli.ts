@@ -1,4 +1,4 @@
-import { PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds, stateCounts } from "./pr";
+import { PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, landedShare, median, mergedSince, parsePullRequests, reviewRounds, stateCounts } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
@@ -12,7 +12,8 @@ commands:
                              pull requests merged on or after --since and before --until
   closed                     pull requests closed without merge, then their share of all pull requests
   prefixes                   pull requests per title prefix (text before the first ":"), most first
-  authors                    pull requests opened per author login, most first`;
+  authors                    pull requests opened per author login, most first
+  landed                     share of all pull requests that are merged`;
 
 const [command] = process.argv.slice(2);
 
@@ -85,6 +86,10 @@ switch (command) {
     const input = await Bun.stdin.text();
     const prs = input.trim() === "" ? [] : parsePullRequests(input);
     for (const a of countByAuthor(prs)) console.log(`${a.login} ${a.count}`);
+    break;
+  }
+  case "landed": {
+    console.log(`${landedShare(parsePullRequests(await Bun.stdin.text()))}%`);
     break;
   }
   default:
