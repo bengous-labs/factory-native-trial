@@ -60,6 +60,7 @@ const badInputs: [string, string | unknown[], string][] = [
   ["an object", "{}", "expected a JSON array from gh pr list, got object"],
   ["null", "null", "expected a JSON array from gh pr list, got null"],
   ["an item that is not an object", "[1]", "pull request at index 0 is not an object"],
+  ["an item that is an array", "[[]]", "pull request at index 0 is not an object"],
   ["an item without number", without("number"), 'pull request at index 0 has no number in "number"'],
   ["an item without title", without("title"), 'pull request at index 0 has no string in "title"'],
   ["an item without state", without("state"), 'pull request at index 0 has no string in "state"'],
@@ -71,6 +72,10 @@ const badInputs: [string, string | unknown[], string][] = [
   ["a review without author", withField("reviews", [{ state: "APPROVED" }]), "pull request at index 0 has review 0 without an author login and a state"],
   ["a review without state", withField("reviews", [{ author: { login: "bob" } }]), "pull request at index 0 has review 0 without an author login and a state"],
   ["a review that is not an object", withField("reviews", [null]), "pull request at index 0 has review 0 without an author login and a state"],
+  ["an author without login", withField("author", {}), 'pull request at index 0 has no login in "author"'],
+  ["a review author without login", withField("reviews", [{ author: {}, state: "APPROVED" }]), "pull request at index 0 has review 0 without an author login and a state"],
+  ["a gh error on several lines", "HTTP 401: Bad credentials\nTry gh auth login", 'stdin is not JSON: "HTTP 401: Bad credentials"'],
+  ["a long line that is not JSON", `<html>${"x".repeat(80)}`, `stdin is not JSON: "<html>${"x".repeat(54)}"`],
 ];
 
 for (const [name, input, message] of badInputs) {

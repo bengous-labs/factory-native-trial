@@ -74,11 +74,12 @@ export function parseInstant(text: string): number | undefined {
   // setUTCFullYear, unlike Date.UTC, does not read years 0 to 99 as 1900 to 1999.
   const day = new Date(0);
   day.setUTCFullYear(y!, mo - 1, d);
-  if (day.getUTCFullYear() !== y || day.getUTCMonth() !== mo - 1 || day.getUTCDate() !== d) return undefined;
+  // A day or month out of range rolls the date into another month.
+  if (day.getUTCMonth() !== mo - 1) return undefined;
   if (h > 23 || mi > 59 || s > 59) return undefined;
   let offset = 0;
   const zone = m[8];
-  if (zone && zone !== "Z") {
+  if (zone !== undefined && zone !== "Z") {
     const [oh, om = 0] = zone.slice(1).split(":").map(Number);
     if (oh! > 23 || om! > 59) return undefined;
     offset = (zone[0] === "-" ? -1 : 1) * (oh! * 60 + om!) * 60_000;
@@ -140,8 +141,9 @@ export function countByAuthor(prs: PullRequest[]): { login: string; count: numbe
 export function mergedSince(prs: PullRequest[], since: number, until?: number): number {
   return prs.filter((pr) => {
     if (pr.mergedAt === null) return false;
-    const at = parseInstant(pr.mergedAt);
-    return at !== undefined && at >= since && (until === undefined || at < until);
+    // parsePullRequests has checked that mergedAt parses.
+    const at = parseInstant(pr.mergedAt)!;
+    return at >= since && (until === undefined || at < until);
   }).length;
 }
 
