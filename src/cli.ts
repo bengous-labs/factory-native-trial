@@ -1,98 +1,128 @@
-import { PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countUnattended, landedShare, median, mergedSince, parsePullRequests, reviewRounds, stateCounts } from "./pr";
+import { GH_COMMAND, InputError, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, reviewRounds, stateCounts, type PullRequest } from "./pr";
 
-const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
+const USAGE = `usage: ${GH_COMMAND} | bun src/cli.ts <command>
 
 commands:
-  count                      number of pull requests read
+  count [--merged]           number of pull requests read; --merged counts only the merged ones
   states [--json]            pull requests that are open, merged and closed without merge, each with its share, then the total;
                              --json prints {"open":n,"merged":n,"closed":n,"total":n}
   rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date> [--until <date>]
-                             pull requests merged on or after --since and before --until
+                             pull requests merged on or after --since and before --until;
+                             <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
   closed                     pull requests closed without merge, then their share of all pull requests
   prefixes                   pull requests per title prefix (text before the first ":"), most first
   authors                    pull requests opened per author login, most first
   landed                     share of all pull requests that are merged`;
 
-const [command] = process.argv.slice(2);
+type Flags = Record<string, string | number | true>;
 
-switch (command) {
-  case "count": {
-    const prs = parsePullRequests(await Bun.stdin.text());
-    const onlyMerged = process.argv.includes("--merged");
-    console.log(onlyMerged ? prs.filter((pr) => pr.state === "MERGED").length : prs.length);
-    break;
-  }
-  case "states": {
-    const prs = parsePullRequests(await Bun.stdin.text());
-    console.log(process.argv.includes("--json") ? JSON.stringify(stateCounts(prs)) : countByState(prs).join("\n"));
-    break;
-  }
-  case "rounds": {
-    const i = process.argv.indexOf("--reviewer");
-    const reviewer = i === -1 ? undefined : process.argv[i + 1];
-    if (!reviewer) {
-      console.error("rounds needs --reviewer <login>");
-      process.exit(1);
-    }
-    const rows = reviewRounds(parsePullRequests(await Bun.stdin.text()), reviewer);
-    for (const r of rows) console.log(`#${r.number} ${r.rounds}`);
-    console.log(`median ${median(rows.map((r) => r.rounds))}`);
-    break;
-  }
-  case "unattended": {
-    const args = process.argv.slice(3);
-    const i = args.indexOf("--owner");
-    const owner = i === -1 ? undefined : args[i + 1];
-    if (!owner) {
-      console.error(USAGE);
-      process.exit(1);
-    }
-    const prs = parsePullRequests(await Bun.stdin.text());
-    const unattended = countUnattended(prs, owner);
-    const merged = prs.filter((pr) => pr.state === "MERGED").length;
-    console.log(unattended);
-    console.log(`${merged === 0 ? 0 : Math.round((unattended / merged) * 100)}%`);
-    break;
-  }
-  case "merged": {
-    const i = process.argv.indexOf("--since");
-    const since = i === -1 ? undefined : process.argv[i + 1];
-    const j = process.argv.indexOf("--until");
-    const until = j === -1 ? undefined : process.argv[j + 1];
-    if (!since || (j !== -1 && !until)) {
-      console.error(USAGE);
-      process.exit(1);
-    }
-    console.log(mergedSince(parsePullRequests(await Bun.stdin.text()), since, until));
-    break;
-  }
-  case "closed": {
-    const { closed, percent } = closedShare(parsePullRequests(await Bun.stdin.text()));
-    console.log(closed);
-    console.log(`${percent}%`);
-    break;
-  }
-  case "prefixes": {
-    for (const { prefix, count } of countByPrefix(parsePullRequests(await Bun.stdin.text()))) console.log(`${prefix} ${count}`);
-    break;
-  }
-  case undefined:
-  case "help":
-    console.log(USAGE);
-    break;
-  case "authors": {
-    const input = await Bun.stdin.text();
-    const prs = input.trim() === "" ? [] : parsePullRequests(input);
-    for (const a of countByAuthor(prs)) console.log(`${a.login} ${a.count}`);
-    break;
-  }
-  case "landed": {
-    console.log(`${landedShare(parsePullRequests(await Bun.stdin.text()))}%`);
-    break;
-  }
-  default:
-    console.error(USAGE);
-    process.exit(1);
+type Command = {
+  /** Each flag the command accepts: "switch" takes no argument, "value" takes the next one, "date" takes an ISO 8601 date read as an instant. */
+  flags: Record<string, "switch" | "value" | "date">;
+  /** Flags the command cannot run without, with the placeholder of their value. */
+  required?: Record<string, string>;
+  run: (prs: PullRequest[], flags: Flags) => string[];
+};
+
+function fail(message: string, usage: boolean): never {
+  console.error(usage ? `${message}\n${USAGE}` : message);
+  process.exit(1);
 }
+
+function readFlags(name: string, command: Command, args: string[]): Flags {
+  const flags: Flags = {};
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    const kind = Object.hasOwn(command.flags, arg) ? command.flags[arg] : undefined;
+    if (kind === undefined) fail(`${name}: unknown ${arg.startsWith("-") ? "flag" : "argument"} ${arg}`, true);
+    if (Object.hasOwn(flags, arg)) fail(`${name}: ${arg} given twice`, true);
+    if (kind === "switch") {
+      flags[arg] = true;
+      continue;
+    }
+    const value = args[++i];
+    if (!value || value.startsWith("--")) fail(`${name}: ${arg} needs a value`, true);
+    flags[arg] = kind === "date" ? readDate(arg, value) : value;
+  }
+  for (const [flag, placeholder] of Object.entries(command.required ?? {})) {
+    if (flags[flag] === undefined) fail(`${name} needs ${flag} <${placeholder}>`, true);
+  }
+  return flags;
+}
+
+function readDate(flag: string, text: string): number {
+  const instant = parseInstant(text);
+  if (instant === undefined) fail(`${flag} ${text} is not an ISO 8601 date or date-time, such as 2026-11-16 or 2026-11-16T10:30:00Z`, false);
+  return instant;
+}
+
+const COMMANDS: Record<string, Command> = {
+  count: {
+    flags: { "--merged": "switch" },
+    run: (prs, flags) => [String(flags["--merged"] ? countMerged(prs) : prs.length)],
+  },
+  states: {
+    flags: { "--json": "switch" },
+    run: (prs, flags) => (flags["--json"] ? [JSON.stringify(stateCounts(prs))] : countByState(prs)),
+  },
+  rounds: {
+    flags: { "--reviewer": "value" },
+    required: { "--reviewer": "login" },
+    run: (prs, flags) => {
+      const rows = reviewRounds(prs, flags["--reviewer"] as string);
+      return [...rows.map((r) => `#${r.number} ${r.rounds}`), `median ${median(rows.map((r) => r.rounds))}`];
+    },
+  },
+  unattended: {
+    flags: { "--owner": "value" },
+    required: { "--owner": "login" },
+    run: (prs, flags) => {
+      const unattended = countUnattended(prs, flags["--owner"] as string);
+      return [String(unattended), `${percent(unattended, countMerged(prs))}%`];
+    },
+  },
+  merged: {
+    flags: { "--since": "date", "--until": "date" },
+    required: { "--since": "date" },
+    run: (prs, flags) => [String(mergedSince(prs, flags["--since"] as number, flags["--until"] as number | undefined))],
+  },
+  closed: {
+    flags: {},
+    run: (prs) => {
+      const { closed, percent } = closedShare(prs);
+      return [String(closed), `${percent}%`];
+    },
+  },
+  prefixes: {
+    flags: {},
+    run: (prs) => countByPrefix(prs).map(({ prefix, count }) => `${prefix} ${count}`),
+  },
+  authors: {
+    flags: {},
+    run: (prs) => countByAuthor(prs).map(({ login, count }) => `${login} ${count}`),
+  },
+  landed: {
+    flags: {},
+    run: (prs) => [`${landedShare(prs)}%`],
+  },
+};
+
+const [name, ...args] = process.argv.slice(2);
+
+if (name === undefined || name === "help") {
+  console.log(USAGE);
+  process.exit(0);
+}
+
+const command = Object.hasOwn(COMMANDS, name) ? COMMANDS[name]! : fail(`unknown command ${name}`, true);
+const flags = readFlags(name, command, args);
+let prs: PullRequest[];
+try {
+  prs = parsePullRequests(await Bun.stdin.text());
+} catch (error) {
+  if (error instanceof InputError) fail(error.message, false);
+  throw error;
+}
+for (const line of command.run(prs, flags)) console.log(line);
