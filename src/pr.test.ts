@@ -137,3 +137,10 @@ test("cli closed prints the count, then the share of all PRs", async () => {
   expect(r.code).toBe(0);
   expect(r.out.trim()).toBe("2\n100%");
 });
+
+test("closed share rounds the percentage, not the ratio", () => {
+  const one = [pr(1, "CLOSED", []), pr(2, "MERGED", []), pr(3, "OPEN", [])];
+  const two = [pr(1, "CLOSED", []), pr(2, "CLOSED", []), pr(3, "OPEN", [])];
+  expect(closedShare(one)).toEqual({ closed: 1, percent: 33 });
+  expect(closedShare(two)).toEqual({ closed: 2, percent: 67 });
+});
