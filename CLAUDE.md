@@ -8,6 +8,13 @@ A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics abo
 - `bun test` passes before every push.
 - Decide small choices yourself and record them in the PR body. Ask the owner only for a choice that is hard to undo or changes what the tool measures.
 
+## Code
+
+- Validate what comes from outside (stdin, arguments) where it enters, and fail with a one-line message, never a stack trace.
+- One way to do a thing: reuse the function, the argument convention and the test helper the file already has.
+- New behaviour comes with a test that fails without it.
+- The usage text and `README.md` list every command and flag.
+
 ## Pull request body
 
 The owner reads it after the agents. Keep it short.
@@ -22,6 +29,8 @@ No question to the reviewer, no summary, no history.
 ## Review comments
 
 Fix a comment that names a real bug. Decline a style preference in one line in its thread. Resolve the thread once it is handled.
+
+The `review` check fails while the review has findings, and only the next review clears it: push a fix. If you think a finding is wrong, reply in its thread with your reason, leave the thread open and stop.
 
 ## Owner paths
 
