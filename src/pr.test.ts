@@ -98,11 +98,14 @@ test("parseInstant reads ISO 8601 dates and date-times, UTC when no offset", () 
   expect(parseInstant("2026-11-16T10:30:00-05:30")).toBe(Date.UTC(2026, 10, 16, 16, 0));
   expect(parseInstant("2026-11")).toBe(Date.UTC(2026, 10, 1));
   expect(parseInstant("2026")).toBe(Date.UTC(2026, 0, 1));
+  expect(parseInstant("2026-11-16T10")).toBe(Date.UTC(2026, 10, 16, 10));
+  expect(parseInstant("2026-11-16T10+01:00")).toBe(Date.UTC(2026, 10, 16, 9));
+  expect(parseInstant("2026-11-16T10:30-02")).toBe(Date.UTC(2026, 10, 16, 12, 30));
   expect(parseInstant("0001-01-01")).toBe(new Date("0001-01-01T00:00:00Z").getTime());
 });
 
 test("parseInstant rejects what is not an ISO 8601 date", () => {
-  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:30+25:00", "2026-1", "2026-11T10:30", "", "toString"]) {
+  for (const text of ["banana", "16/11/2026", "2026-11-16 10:30", "2026-02-30", "2026-13-01", "2026-11-16T24:00Z", "2026-11-16T10:30+25:00", "2026-1", "2026-11T10:30", "2026-11-16T1", "2026-11-16T10:30+1", "", "toString"]) {
     expect(parseInstant(text)).toBeUndefined();
   }
 });
@@ -128,6 +131,7 @@ test("cli merged reads a month or a year as its first day", async () => {
   expect((await run(["merged", "--since", "2026-11"], input)).out).toBe("2\n");
   expect((await run(["merged", "--since", "2026", "--until", "2027"], input)).out).toBe("2\n");
   expect((await run(["merged", "--since", "0001-01-01"], input)).out).toBe("3\n");
+  expect((await run(["merged", "--since", "2026-11-01T00"], input)).out).toBe("2\n");
 });
 
 test("cli merged compares dates as instants, not strings", async () => {

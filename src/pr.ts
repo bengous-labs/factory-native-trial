@@ -57,7 +57,7 @@ export function parsePullRequests(json: string): PullRequest[] {
   return data as PullRequest[];
 }
 
-const DATE = /^(\d{4})(?:-(\d{2})(?:-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(Z|[+-]\d{2}:\d{2})?)?)?)?$/;
+const DATE = /^(\d{4})(?:-(\d{2})(?:-(\d{2})(?:T(\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?)?(Z|[+-]\d{2}(?::\d{2})?)?)?)?)?$/;
 
 /**
  * Milliseconds since the epoch of an ISO 8601 year, month, date or date-time, or undefined.
@@ -76,7 +76,7 @@ export function parseInstant(text: string): number | undefined {
   let offset = 0;
   const zone = m[8];
   if (zone && zone !== "Z") {
-    const [oh, om] = zone.slice(1).split(":").map(Number);
+    const [oh, om = 0] = zone.slice(1).split(":").map(Number);
     if (oh! > 23 || om! > 59) return undefined;
     offset = (zone[0] === "-" ? -1 : 1) * (oh! * 60 + om!) * 60_000;
   }
