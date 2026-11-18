@@ -16,7 +16,7 @@ unattended --owner <login> merged pull requests with no review from <login>
 merged --since <date> [--until <date>]
                            pull requests merged on or after --since and before --until;
                            <date> is ISO 8601: 2026, 2026-11, 2026-11-16 or 2026-11-16T10:30:00+01:00, UTC without offset
-closed                     pull requests closed without merge, then their share of all pull requests
+closed [--json]            pull requests closed without merge, then their share of all pull requests; --json prints {"count","percent"}
 prefixes [--json]          pull requests per title prefix (text before the first ":"), most first; --json prints an array of {"name","count"}
 authors [--json]           pull requests opened per author login, most first; --json prints an array of {"name","count"}
 landed                     share of all pull requests that are merged
