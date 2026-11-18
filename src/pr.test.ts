@@ -144,3 +144,19 @@ test("closed share rounds the percentage, not the ratio", () => {
   expect(closedShare(one)).toEqual({ closed: 1, percent: 33 });
   expect(closedShare(two)).toEqual({ closed: 2, percent: 67 });
 });
+
+test("cli help and no command print the usage to stdout, exit 0", async () => {
+  for (const args of [["help"], []]) {
+    const r = await run(args, "");
+    expect(r.code).toBe(0);
+    expect(r.out).toStartWith("usage:");
+    expect(r.err).toBe("");
+  }
+});
+
+test("cli unknown command prints the usage to stderr, exit 1", async () => {
+  const r = await run(["nope"], "");
+  expect(r.code).toBe(1);
+  expect(r.out).toBe("");
+  expect(r.err).toStartWith("usage:");
+});
