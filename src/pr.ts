@@ -171,6 +171,11 @@ export function countByPrefix(prs: PullRequest[]): { prefix: string; count: numb
     .sort((a, b) => b.count - a.count || (a.prefix < b.prefix ? -1 : a.prefix > b.prefix ? 1 : 0));
 }
 
+/** countByPrefix as `{ name, count }`, the shape of `prefixes --json` and of summary's prefixes. */
+export function prefixCounts(prs: PullRequest[]): { name: string; count: number }[] {
+  return countByPrefix(prs).map(({ prefix, count }) => ({ name: prefix, count }));
+}
+
 /** Every metric in one object; each value is what its own command prints for the same input. */
 export function summary(prs: PullRequest[], owner: string, reviewer: string) {
   const rounds = reviewRounds(prs, reviewer).map((r) => r.rounds);
@@ -183,6 +188,6 @@ export function summary(prs: PullRequest[], owner: string, reviewer: string) {
     unattended: { count: unattended, percent: percent(unattended, countMerged(prs)) },
     rounds: { median: median(rounds), max: rounds.reduce((a, b) => Math.max(a, b), 0) },
     authors: authorCounts(prs),
-    prefixes: countByPrefix(prs).map(({ prefix, count }) => ({ name: prefix, count })),
+    prefixes: prefixCounts(prs),
   };
 }
