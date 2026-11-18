@@ -1,4 +1,4 @@
-import { PR_JSON_FIELDS, closedShare, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
+import { PR_JSON_FIELDS, closedShare, countByPrefix, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
@@ -9,7 +9,8 @@ commands:
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date> [--until <date>]
                              pull requests merged on or after --since and before --until
-  closed                     pull requests closed without merge, then their share of all pull requests`;
+  closed                     pull requests closed without merge, then their share of all pull requests
+  prefixes                   pull requests per title prefix (text before the first ":"), most first`;
 
 const [command] = process.argv.slice(2);
 
@@ -68,6 +69,10 @@ switch (command) {
     const { closed, percent } = closedShare(parsePullRequests(await Bun.stdin.text()));
     console.log(closed);
     console.log(`${percent}%`);
+    break;
+  }
+  case "prefixes": {
+    for (const { prefix, count } of countByPrefix(parsePullRequests(await Bun.stdin.text()))) console.log(`${prefix} ${count}`);
     break;
   }
   case undefined:
