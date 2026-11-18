@@ -23,11 +23,16 @@ export function parsePullRequests(json: string): PullRequest[] {
   return data as PullRequest[];
 }
 
-export function countByState(prs: PullRequest[]): string[] {
+export function stateCounts(prs: PullRequest[]): { open: number; merged: number; closed: number; total: number } {
   const counts = { OPEN: 0, MERGED: 0, CLOSED: 0 };
   for (const pr of prs) counts[pr.state]++;
-  const share = (n: number) => `${n} (${prs.length === 0 ? 0 : Math.round((n / prs.length) * 100)}%)`;
-  return [`open ${share(counts.OPEN)}`, `merged ${share(counts.MERGED)}`, `closed ${share(counts.CLOSED)}`, `total ${prs.length}`];
+  return { open: counts.OPEN, merged: counts.MERGED, closed: counts.CLOSED, total: prs.length };
+}
+
+export function countByState(prs: PullRequest[]): string[] {
+  const { open, merged, closed, total } = stateCounts(prs);
+  const share = (n: number) => `${n} (${total === 0 ? 0 : Math.round((n / total) * 100)}%)`;
+  return [`open ${share(open)}`, `merged ${share(merged)}`, `closed ${share(closed)}`, `total ${total}`];
 }
 
 export function countUnattended(prs: PullRequest[], owner: string): number {

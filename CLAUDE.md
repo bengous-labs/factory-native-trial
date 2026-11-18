@@ -1,6 +1,6 @@
 # factory-native-trial
 
-A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics about how pull requests land. No dependencies: do not add any.
+A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics about how pull requests land; `states` also has a `--json` output. No dependencies: do not add any.
 
 ## Work
 
