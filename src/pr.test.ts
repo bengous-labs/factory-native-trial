@@ -54,8 +54,8 @@ const without = (field: string) => {
 };
 
 const badInputs: [string, string | unknown[], string][] = [
-  ["empty stdin", "", "no input on stdin"],
-  ["blank stdin", "  \n", "no input on stdin"],
+  ["empty stdin", "", "no input on stdin: pipe in gh pr list --state all --limit 1000 --json number,title,state,author,mergedAt,reviews"],
+  ["blank stdin", "  \n", "no input on stdin: pipe in gh pr list --state all --limit 1000 --json"],
   ["a gh error", "HTTP 401: Bad credentials", 'stdin is not JSON: "HTTP 401: Bad credentials"'],
   ["an object", "{}", "expected a JSON array from gh pr list, got object"],
   ["null", "null", "expected a JSON array from gh pr list, got null"],

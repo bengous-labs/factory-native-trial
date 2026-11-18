@@ -1,6 +1,6 @@
-import { InputError, PR_JSON_FIELDS, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, reviewRounds, stateCounts, type PullRequest } from "./pr";
+import { GH_COMMAND, InputError, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, reviewRounds, stateCounts, type PullRequest } from "./pr";
 
-const USAGE = `usage: gh pr list --state all --limit 1000 --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
+const USAGE = `usage: ${GH_COMMAND} | bun src/cli.ts <command>
 
 commands:
   count [--merged]           number of pull requests read; --merged counts only the merged ones

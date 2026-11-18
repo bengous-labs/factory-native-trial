@@ -15,6 +15,9 @@ export type PullRequest = {
 
 export const PR_JSON_FIELDS = "number,title,state,author,mergedAt,reviews";
 
+/** The command whose output the CLI reads. */
+export const GH_COMMAND = `gh pr list --state all --limit 1000 --json ${PR_JSON_FIELDS}`;
+
 const STATES = ["OPEN", "MERGED", "CLOSED"];
 
 /** A problem with what the user gave the CLI: the CLI prints its message on one line and exits 1. */
@@ -40,7 +43,7 @@ function checkPullRequest(item: unknown): string | undefined {
 }
 
 export function parsePullRequests(json: string): PullRequest[] {
-  if (json.trim() === "") throw new InputError(`no input on stdin: pipe in gh pr list --json ${PR_JSON_FIELDS}`);
+  if (json.trim() === "") throw new InputError(`no input on stdin: pipe in ${GH_COMMAND}`);
   let data: unknown;
   try {
     data = JSON.parse(json);
