@@ -1,4 +1,4 @@
-import { PR_JSON_FIELDS, closedShare, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
+import { PR_JSON_FIELDS, closedShare, countByAuthor, countByState, countUnattended, median, mergedSince, parsePullRequests, reviewRounds } from "./pr";
 
 const USAGE = `usage: gh pr list --state all --json ${PR_JSON_FIELDS} | bun src/cli.ts <command>
 
@@ -8,7 +8,8 @@ commands:
   rounds --reviewer <login>  reviews <login> submitted per PR, then the median
   unattended --owner <login> merged pull requests with no review from <login>
   merged --since <date>      pull requests merged on or after <date>
-  closed                     pull requests closed without merge, then their share of all pull requests`;
+  closed                     pull requests closed without merge, then their share of all pull requests
+  authors                    pull requests opened per author login, most first`;
 
 const [command] = process.argv.slice(2);
 
@@ -71,6 +72,12 @@ switch (command) {
   case "help":
     console.log(USAGE);
     break;
+  case "authors": {
+    const input = await Bun.stdin.text();
+    const prs = input.trim() === "" ? [] : parsePullRequests(input);
+    for (const a of countByAuthor(prs)) console.log(`${a.login} ${a.count}`);
+    break;
+  }
   default:
     console.error(USAGE);
     process.exit(1);

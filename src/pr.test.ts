@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { closedShare, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
+import { closedShare, countByAuthor, countByState, countUnattended, median, mergedSince, parsePullRequests } from "./pr";
 
 test("median of an even count is the mean of the middle pair", () => {
   expect(median([4, 1, 3, 2])).toBe(2.5);
@@ -159,4 +159,31 @@ test("cli unknown command prints the usage to stderr, exit 1", async () => {
   expect(r.code).toBe(1);
   expect(r.out).toBe("");
   expect(r.err).toStartWith("usage:");
+});
+
+const byAuthor = (number: number, login: string) => ({ ...prOf(number, "MERGED"), author: { login } });
+
+test("authors sorts by count descending, then by login", () => {
+  const prs = [byAuthor(1, "zed"), byAuthor(2, "amy"), byAuthor(3, "bob"), byAuthor(4, "bob"), byAuthor(5, "zed"), byAuthor(6, "cat")];
+  expect(countByAuthor(prs)).toEqual([
+    { login: "bob", count: 2 },
+    { login: "zed", count: 2 },
+    { login: "amy", count: 1 },
+    { login: "cat", count: 1 },
+  ]);
+});
+
+test("cli authors prints one <login> <count> line per author", async () => {
+  const r = await run(["authors"], JSON.stringify([byAuthor(1, "amy"), byAuthor(2, "bob"), byAuthor(3, "bob")]));
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("bob 2\namy 1\n");
+});
+
+test("cli authors on empty input prints nothing, exit 0", async () => {
+  for (const input of ["[]", ""]) {
+    const r = await run(["authors"], input);
+    expect(r.code).toBe(0);
+    expect(r.out).toBe("");
+    expect(r.err).toBe("");
+  }
 });

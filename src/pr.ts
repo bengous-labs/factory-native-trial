@@ -46,6 +46,14 @@ export function reviewRounds(prs: PullRequest[], reviewer: string): { number: nu
     .sort((a, b) => a.number - b.number);
 }
 
+export function countByAuthor(prs: PullRequest[]): { login: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const pr of prs) counts.set(pr.author.login, (counts.get(pr.author.login) ?? 0) + 1);
+  return [...counts]
+    .map(([login, count]) => ({ login, count }))
+    .sort((a, b) => b.count - a.count || (a.login < b.login ? -1 : a.login > b.login ? 1 : 0));
+}
+
 export function mergedSince(prs: PullRequest[], since: string): number {
   return prs.filter((pr) => pr.mergedAt !== null && pr.mergedAt >= since).length;
 }

@@ -14,6 +14,7 @@ states                     pull requests that are open, merged and closed withou
 rounds --reviewer <login>  reviews <login> submitted per PR, then the median
 unattended --owner <login> merged pull requests with no review from <login>
 merged --since <date>      pull requests merged on or after <date>
+authors                    pull requests opened per author login, most first
 ```
 
 Run the tests with `bun test`. No dependencies.
