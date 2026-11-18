@@ -1,2 +1,6 @@
-/.github/ @bengous
-/CLAUDE.md @bengous
+# Files only the owner approves: the gate, this list, and the review workflow, which the review cannot judge
+# because claude-code-action skips itself on a pull request that changes it.
+# owner-gate reads each path as a prefix from the root.
+/.github/workflows/owner-gate.yml @bengous
+/.github/workflows/review.yml @bengous
+/.github/CODEOWNERS @bengous
