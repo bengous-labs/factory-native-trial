@@ -23,6 +23,7 @@ landed [--json]            share of all pull requests that are merged; --json pr
 summary --owner <login> --reviewer <login>
                            every metric in one JSON object: count, states, landed, closed, unattended,
                            rounds (median, max), authors and prefixes (name, count, most first)
+reviewed                   pull requests with at least one review, from anyone
 open                       number of pull requests that are open
 ```
 
