@@ -191,6 +191,8 @@ const flagErrors: [string[], string][] = [
   [["summary", "--owner", "amy", "--reviewer"], "summary: --reviewer needs a value"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--owner", "cat"], "summary: --owner given twice"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
+  [["reviewed", "--json"], "reviewed: unknown flag --json"],
+  [["reviewed", "extra"], "reviewed: unknown argument extra"],
 ];
 
 for (const [args, message] of flagErrors) {
@@ -214,7 +216,7 @@ test("cli help and no command print the usage to stdout, exit 0", async () => {
 test("the usage and README.md list every command and flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "--limit 1000"]) {
+  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "--limit 1000"]) {
     expect(usage).toContain(word);
     expect(readme).toContain(word);
   }
@@ -447,6 +449,28 @@ test("cli summary prints one JSON object whose values equal what each command pr
     authors: [{ name: "amy", count: 3 }, { name: "bob", count: 2 }, { name: "cat", count: 1 }],
     prefixes: [{ name: "fix", count: 3 }, { name: "docs", count: 1 }, { name: "feat", count: 1 }, { name: "other", count: 1 }],
   });
+});
+
+test("cli reviewed prints the number of pull requests with a review from anyone", async () => {
+  const input = [
+    pr(1, "MERGED", { reviews: [review("amy")] }),
+    pr(2, "OPEN", { reviews: [review("bob", "COMMENTED"), review("bob", "CHANGES_REQUESTED")] }),
+    pr(3, "CLOSED"),
+    pr(4),
+  ];
+  const r = await run(["reviewed"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("2\n");
+  expect((await run(["reviewed"], "[]")).out).toBe("0\n");
+});
+
+test("the usage and README.md list reviewed last, after summary", async () => {
+  const usage = (await run(["help"], "")).out;
+  const readme = await Bun.file("README.md").text();
+  for (const text of [usage, readme]) {
+    const commands = text.split("\n").filter((l) => /^ {0,2}[a-z]+(?: |$)/.test(l)).map((l) => l.trim().split(" ")[0]);
+    expect(commands.slice(-2)).toEqual(["summary", "reviewed"]);
+  }
 });
 
 test("cli summary on empty input prints zeros and empty arrays", async () => {
