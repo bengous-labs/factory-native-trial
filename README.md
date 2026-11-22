@@ -19,7 +19,7 @@ merged --since <date> [--until <date>]
 closed [--json]            pull requests closed without merge, then their share of all pull requests; --json prints {"count","percent"}
 prefixes [--json]          pull requests per title prefix (text before the first ":"), most first; --json prints an array of {"name","count"}
 authors [--json]           pull requests opened per author login, most first; --json prints an array of {"name","count"}
-landed                     share of all pull requests that are merged
+landed [--json]            share of all pull requests that are merged; --json prints {"percent"}
 summary --owner <login> --reviewer <login>
                            every metric in one JSON object: count, states, landed, closed, unattended,
                            rounds (median, max), authors and prefixes (name, count, most first)

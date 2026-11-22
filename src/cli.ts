@@ -17,7 +17,8 @@ commands:
                              --json prints [{"name":s,"count":n}, ...] in the same order
   authors [--json]           pull requests opened per author login, most first;
                              --json prints [{"name":s,"count":n}, ...] in the same order
-  landed                     share of all pull requests that are merged
+  landed [--json]            share of all pull requests that are merged;
+                             --json prints {"percent":n}
   summary --owner <login> --reviewer <login>
                              every metric in one JSON object: count, states, landed, closed, unattended,
                              rounds (median, max), authors and prefixes (name, count, most first)`;
@@ -110,8 +111,11 @@ const COMMANDS: Record<string, Command> = {
     run: (prs, flags) => (flags["--json"] ? [JSON.stringify(authorCounts(prs))] : countByAuthor(prs).map(({ login, count }) => `${login} ${count}`)),
   },
   landed: {
-    flags: {},
-    run: (prs) => [`${landedShare(prs)}%`],
+    flags: { "--json": "switch" },
+    run: (prs, flags) => {
+      const percent = landedShare(prs);
+      return flags["--json"] ? [JSON.stringify({ percent })] : [`${percent}%`];
+    },
   },
   summary: {
     flags: { "--owner": "value", "--reviewer": "value" },

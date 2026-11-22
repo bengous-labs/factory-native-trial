@@ -183,6 +183,7 @@ const flagErrors: [string[], string][] = [
   [["authors", "--json", "--json"], "authors: --json given twice"],
   [["prefixes", "--json", "--json"], "prefixes: --json given twice"],
   [["closed", "--json", "--json"], "closed: --json given twice"],
+  [["landed", "--json", "--json"], "landed: --json given twice"],
   [["count", "constructor", "x"], "count: unknown argument constructor"],
   [["landed", "toString"], "landed: unknown argument toString"],
   [["summary", "--reviewer", "bob"], "summary needs --owner <login>"],
@@ -339,10 +340,10 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes, authors and closed their --json flag", async () => {
+test("the usage and README.md give prefixes, authors, closed and landed their --json flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]"]) {
+  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]", "landed [--json]"]) {
     expect(usage).toContain(entry);
     expect(readme).toContain(entry);
   }
@@ -397,6 +398,16 @@ test("cli landed prints the share of merged pull requests", async () => {
   const r = await run(["landed"], [pr(1), pr(2, "CLOSED")]);
   expect(r.code).toBe(0);
   expect(r.out).toBe("50%\n");
+});
+
+test("cli landed --json prints the text output's value as one object", async () => {
+  const input = [pr(1), pr(2), pr(3, "CLOSED")];
+  const [share] = (await run(["landed"], input)).out.trimEnd().split("\n");
+  const r = await run(["landed", "--json"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('{"percent":67}\n');
+  expect(JSON.parse(r.out)).toEqual({ percent: parseInt(share!) });
+  expect((await run(["landed", "--json"], "[]")).out).toBe('{"percent":0}\n');
 });
 
 test("cli summary prints one JSON object whose values equal what each command prints", async () => {
