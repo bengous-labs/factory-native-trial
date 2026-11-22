@@ -453,7 +453,7 @@ test("cli summary prints one JSON object whose values equal what each command pr
   });
 });
 
-test("cli reviewed prints the number of pull requests with a review from anyone", async () => {
+test("cli reviewed prints the number of pull requests with a review from anyone, then their share", async () => {
   const input = [
     pr(1, "MERGED", { reviews: [review("amy")] }),
     pr(2, "OPEN", { reviews: [review("bob", "COMMENTED"), review("bob", "CHANGES_REQUESTED")] }),
@@ -462,8 +462,17 @@ test("cli reviewed prints the number of pull requests with a review from anyone"
   ];
   const r = await run(["reviewed"], input);
   expect(r.code).toBe(0);
-  expect(r.out).toBe("2\n");
-  expect((await run(["reviewed"], "[]")).out).toBe("0\n");
+  expect(r.out).toBe("2\n50%\n");
+  expect((await run(["reviewed"], [pr(1, "MERGED", { reviews: [review("amy")] }), pr(2), pr(3)])).out).toBe("1\n33%\n");
+  expect((await run(["reviewed"], "[]")).out).toBe("0\n0%\n");
+});
+
+test("the usage and README.md give reviewed its share", async () => {
+  const usage = (await run(["help"], "")).out;
+  const readme = await Bun.file("README.md").text();
+  for (const text of [usage, readme]) {
+    expect(text.split("\n").find((l) => l.startsWith("reviewed") || l.startsWith("  reviewed"))).toContain("then their share of all pull requests");
+  }
 });
 
 test("the usage and README.md list summary, reviewed, then open last", async () => {
