@@ -114,6 +114,10 @@ export function countUnattended(prs: PullRequest[], owner: string): number {
   ).length;
 }
 
+export function countReviewed(prs: PullRequest[]): number {
+  return prs.filter((pr) => pr.reviews.length > 0).length;
+}
+
 export function closedShare(prs: PullRequest[]): { closed: number; percent: number } {
   const closed = prs.filter((pr) => pr.state === "CLOSED").length;
   return { closed, percent: percent(closed, prs.length) };
