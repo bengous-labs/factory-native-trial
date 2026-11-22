@@ -193,6 +193,8 @@ const flagErrors: [string[], string][] = [
   [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
   [["reviewed", "--json"], "reviewed: unknown flag --json"],
   [["reviewed", "extra"], "reviewed: unknown argument extra"],
+  [["open", "--json"], "open: unknown flag --json"],
+  [["open", "extra"], "open: unknown argument extra"],
 ];
 
 for (const [args, message] of flagErrors) {
@@ -216,7 +218,7 @@ test("cli help and no command print the usage to stdout, exit 0", async () => {
 test("the usage and README.md list every command and flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "--limit 1000"]) {
+  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "open", "--limit 1000"]) {
     expect(usage).toContain(word);
     expect(readme).toContain(word);
   }
@@ -464,12 +466,12 @@ test("cli reviewed prints the number of pull requests with a review from anyone"
   expect((await run(["reviewed"], "[]")).out).toBe("0\n");
 });
 
-test("the usage and README.md list reviewed last, after summary", async () => {
+test("the usage and README.md list summary, reviewed, then open last", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
   for (const text of [usage, readme]) {
     const commands = text.split("\n").filter((l) => /^ {0,2}[a-z]+(?: |$)/.test(l)).map((l) => l.trim().split(" ")[0]);
-    expect(commands.slice(-2)).toEqual(["summary", "reviewed"]);
+    expect(commands.slice(-3)).toEqual(["summary", "reviewed", "open"]);
   }
 });
 
@@ -477,4 +479,11 @@ test("cli summary on empty input prints zeros and empty arrays", async () => {
   const r = await run(["summary", "--owner", "own", "--reviewer", "bob"], "[]");
   expect(r.code).toBe(0);
   expect(r.out).toBe('{"count":0,"states":{"open":0,"merged":0,"closed":0,"total":0},"landed":0,"closed":0,"unattended":{"count":0,"percent":0},"rounds":{"median":0,"max":0},"authors":[],"prefixes":[]}\n');
+});
+
+test("cli open prints the number of open pull requests", async () => {
+  const r = await run(["open"], [pr(1, "OPEN"), pr(2), pr(3, "CLOSED"), pr(4, "OPEN")]);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("2\n");
+  expect((await run(["open"], "[]")).out).toBe("0\n");
 });
