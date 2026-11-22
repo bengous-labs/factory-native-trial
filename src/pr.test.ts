@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, stateCounts, type PullRequest } from "./pr";
+import { closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, stateCounts, wholePercent, type PullRequest } from "./pr";
 
 /** The one fixture builder: a merged pull request unless told otherwise, with mergedAt set only when merged. */
 const pr = (number: number, state: PullRequest["state"] = "MERGED", fields: Partial<PullRequest> = {}): PullRequest => ({
@@ -25,10 +25,10 @@ const USAGE = "usage: gh pr list --state all --limit 1000 --json";
 
 // Shared helpers
 
-test("percent rounds the percentage and is 0 for an empty total", () => {
-  expect(percent(1, 3)).toBe(33);
-  expect(percent(2, 3)).toBe(67);
-  expect(percent(0, 0)).toBe(0);
+test("wholePercent rounds the percentage and is 0 for an empty total", () => {
+  expect(wholePercent(1, 3)).toBe(33);
+  expect(wholePercent(2, 3)).toBe(67);
+  expect(wholePercent(0, 0)).toBe(0);
 });
 
 test("countMerged counts only merged pull requests", () => {

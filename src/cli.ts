@@ -1,4 +1,4 @@
-import { GH_COMMAND, InputError, authorCounts, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countReviewed, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, percent, prefixCounts, reviewRounds, stateCounts, summary, type PullRequest } from "./pr";
+import { GH_COMMAND, InputError, authorCounts, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countReviewed, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, prefixCounts, reviewRounds, stateCounts, summary, wholePercent, type PullRequest } from "./pr";
 
 const USAGE = `usage: ${GH_COMMAND} | bun src/cli.ts <command>
 
@@ -89,7 +89,7 @@ const COMMANDS: Record<string, Command> = {
     required: { "--owner": "login" },
     run: (prs, flags) => {
       const unattended = countUnattended(prs, flags["--owner"] as string);
-      return [String(unattended), `${percent(unattended, countMerged(prs))}%`];
+      return [String(unattended), `${wholePercent(unattended, countMerged(prs))}%`];
     },
   },
   merged: {
