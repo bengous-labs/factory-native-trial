@@ -88,7 +88,7 @@ export function parseInstant(text: string): number | undefined {
 }
 
 /** n as a whole percentage of total, 0 when total is 0. */
-export function percent(n: number, total: number): number {
+export function wholePercent(n: number, total: number): number {
   return total === 0 ? 0 : Math.round((n / total) * 100);
 }
 
@@ -104,7 +104,7 @@ export function stateCounts(prs: PullRequest[]): { open: number; merged: number;
 
 export function countByState(prs: PullRequest[]): string[] {
   const { open, merged, closed, total } = stateCounts(prs);
-  const share = (n: number) => `${n} (${percent(n, total)}%)`;
+  const share = (n: number) => `${n} (${wholePercent(n, total)}%)`;
   return [`open ${share(open)}`, `merged ${share(merged)}`, `closed ${share(closed)}`, `total ${total}`];
 }
 
@@ -120,11 +120,11 @@ export function countReviewed(prs: PullRequest[]): number {
 
 export function closedShare(prs: PullRequest[]): { closed: number; percent: number } {
   const closed = prs.filter((pr) => pr.state === "CLOSED").length;
-  return { closed, percent: percent(closed, prs.length) };
+  return { closed, percent: wholePercent(closed, prs.length) };
 }
 
 export function landedShare(prs: PullRequest[]): number {
-  return percent(countMerged(prs), prs.length);
+  return wholePercent(countMerged(prs), prs.length);
 }
 
 export function reviewRounds(prs: PullRequest[], reviewer: string): { number: number; rounds: number }[] {
@@ -189,7 +189,7 @@ export function summary(prs: PullRequest[], owner: string, reviewer: string) {
     states: stateCounts(prs),
     landed: landedShare(prs),
     closed: closedShare(prs).percent,
-    unattended: { count: unattended, percent: percent(unattended, countMerged(prs)) },
+    unattended: { count: unattended, percent: wholePercent(unattended, countMerged(prs)) },
     rounds: { median: median(rounds), max: rounds.reduce((a, b) => Math.max(a, b), 0) },
     authors: authorCounts(prs),
     prefixes: prefixCounts(prs),
