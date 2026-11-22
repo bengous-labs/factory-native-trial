@@ -21,7 +21,8 @@ commands:
                              --json prints {"percent":n}
   summary --owner <login> --reviewer <login>
                              every metric in one JSON object: count, states, landed, closed, unattended,
-                             rounds (median, max), authors and prefixes (name, count, most first)`;
+                             rounds (median, max), authors and prefixes (name, count, most first)
+  open                       number of pull requests that are open`;
 
 type Flags = Record<string, string | number | true>;
 
@@ -121,6 +122,10 @@ const COMMANDS: Record<string, Command> = {
     flags: { "--owner": "value", "--reviewer": "value" },
     required: { "--owner": "login", "--reviewer": "login" },
     run: (prs, flags) => [JSON.stringify(summary(prs, flags["--owner"] as string, flags["--reviewer"] as string))],
+  },
+  open: {
+    flags: {},
+    run: (prs) => [String(stateCounts(prs).open)],
   },
 };
 
