@@ -128,7 +128,7 @@ const COMMANDS: Record<string, Command> = {
     flags: {},
     run: (prs) => {
       const reviewed = countReviewed(prs);
-      return [String(reviewed), `${percent(reviewed, prs.length)}%`];
+      return [String(reviewed), `${wholePercent(reviewed, prs.length)}%`];
     },
   },
   open: {
