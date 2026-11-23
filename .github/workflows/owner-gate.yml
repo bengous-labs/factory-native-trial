@@ -46,13 +46,15 @@ jobs:
         id: tier
         continue-on-error: true
         run: bun .github/factory/tier.ts gate --repo "$REPO" --pr "$PR" --head "$HEAD"
+      # A fork's pull request never reaches the classifier: anyone can open one, and each would spend the
+      # owner's token on a stranger's text. It gets no tier, which the last step reads as human.
       - name: Install Claude Code
-        if: steps.tier.outputs.ask == 'true'
+        if: steps.tier.outputs.ask == 'true' && github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         run: npm install -g @anthropic-ai/claude-code
-      - name: Ask the classifier, once per commit
+      - name: Ask the classifier, once per commit and diff
         id: judge
-        if: steps.tier.outputs.ask == 'true'
+        if: steps.tier.outputs.ask == 'true' && github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -81,7 +83,7 @@ jobs:
             echo "Tier low: $REASON"
             exit 0
           fi
-          echo "Tier human: ${REASON:-the tier could not be computed}"
+          echo "Tier human: ${REASON:-no tier was computed, after a failed step or for a fork's pull request}"
           # An agent acts with the owner's account but through the Claude GitHub App; only a label added without an app counts.
           last=$(gh api --paginate "repos/$REPO/issues/$PR/events?per_page=100" \
             --jq '.[] | select((.event == "labeled" or .event == "unlabeled") and .label.name == "human-approved") | "\(.event) \(.performed_via_github_app == null) \(.actor.login)"' | tail -n1)

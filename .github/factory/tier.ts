@@ -74,12 +74,13 @@ export interface Rules {
   readonly calibration: Read<Calibration>;
 }
 
-/** A verdict of the classifier as its check run holds it. */
+/** A verdict of the classifier as its check run holds it, with the digests of the prompt and of the diff it judged. */
 export interface Recorded {
   readonly tier: Tier;
   readonly reason: string;
   readonly prompt: string;
   readonly model: string;
+  readonly diff: string;
 }
 
 export interface GitHub {
@@ -551,9 +552,12 @@ export function filesOf(pages: unknown): readonly FileChange[] {
   });
 }
 
-/** What a recorded check run holds in `external_id`: the tier, the prompt digest and the model, space-separated. */
-export function externalIdOf({ tier, prompt, model }: Recorded): string {
-  return `${tier} ${prompt} ${model}`;
+/**
+ * What a recorded check run holds in `external_id`, space-separated: the tier, the prompt's digest, the model and
+ * the digest of the diff. One commit has another diff against another base, so the commit alone names no verdict.
+ */
+export function externalIdOf({ tier, prompt, model, diff }: Recorded): string {
+  return `${tier} ${prompt} ${model} ${diff}`;
 }
 
 /**
@@ -575,19 +579,20 @@ export function recordsOf(listing: unknown): readonly Recorded[] {
 
       if (!isRecord(app) || app["slug"] !== ACTIONS_APP || typeof id !== "number") return [];
 
-      const [tierText = "", prompt = "", model = "", ...rest] = (
+      const [tierText = "", prompt = "", model = "", diff = "", ...rest] = (
         stringField(run, "external_id") ?? ""
       ).split(" ");
 
       const tier = TIERS.find((known) => known === tierText);
 
-      if (tier === undefined || prompt === "" || model === "" || rest.length > 0) return [];
+      if (tier === undefined || prompt === "" || model === "" || diff === "" || rest.length > 0) {
+        return [];
+      }
 
-      const reason = oneLine(isRecord(output) ? (stringField(output, "summary") ?? "") : "");
+      const summary = oneLine(isRecord(output) ? (stringField(output, "summary") ?? "") : "");
+      const reason = summary === "" ? "recorded" : summary;
 
-      return [
-        { id, recorded: { tier, reason: reason === "" ? "recorded" : reason, prompt, model } },
-      ];
+      return [{ id, recorded: { tier, reason, prompt, model, diff } }];
     })
     .toSorted((a, b) => a.id - b.id)
     .map(({ recorded }) => recorded);
@@ -669,8 +674,9 @@ async function judge(
 }
 
 /**
- * The tier of the pull request at `head`: the floor, else the verdict recorded on that commit, else the validated
- * classifier, asked through `ask` and recorded. With no `ask`, a change that needs the classifier answers `ask`.
+ * The tier of the pull request at `head`: the floor, else the verdict recorded on that commit for this diff, else
+ * the validated classifier, asked through `ask` and recorded. With no `ask`, a change that needs the classifier
+ * answers `ask`.
  */
 export async function decide(
   github: GitHub,
@@ -705,9 +711,13 @@ export async function decide(
 
   const model = rules.calibration.value.model ?? "";
   const prompt = digestOf(rules.system);
+  const change = await github.diff(pr);
+  const diff = digestOf(change);
 
   const recorded = (records: readonly Recorded[]): Recorded | undefined =>
-    records.find((record) => record.prompt === prompt && record.model === model);
+    records.find(
+      (record) => record.prompt === prompt && record.model === model && record.diff === diff,
+    );
 
   const earlier = recorded(await github.records(head));
 
@@ -724,7 +734,7 @@ export async function decide(
 
   if (ask === null) return { decision: { kind: "ask" }, lines };
 
-  const judged = await judge(await github.diff(pr), rules.system, model, ask);
+  const judged = await judge(change, rules.system, model, ask);
 
   if (judged.decision.kind !== "decided" || judged.decision.by !== "judge") {
     return { decision: judged.decision, lines };
@@ -740,7 +750,7 @@ export async function decide(
     };
   }
 
-  await github.record(head, { ...judged.decision.verdict, prompt, model });
+  await github.record(head, { ...judged.decision.verdict, prompt, model, diff });
 
   // Two runs of the gate on one commit can both ask: the oldest record is the verdict of both.
   const first = recorded(await github.records(head));
