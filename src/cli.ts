@@ -132,7 +132,7 @@ const COMMANDS: Record<string, Command> = {
       try {
         writeFileSync(file, `${json}\n`);
       } catch (error) {
-        fail(`summary: cannot write ${file}: ${(error as { code?: string }).code ?? error}`, false);
+        fail(`summary: could not write ${file}: ${(error as { code?: string }).code ?? error}`, false);
       }
       return [];
     },
