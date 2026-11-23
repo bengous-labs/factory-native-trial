@@ -27,7 +27,8 @@ commands:
                              rounds (median and max), authors and prefixes (name and count, most first)
   reviewed [--json]          pull requests with at least one review, from anyone, then their share of all pull requests;
                              --json prints {"count":n,"percent":n}
-  open                       number of pull requests that are open`;
+  open [--json]              number of pull requests that are open;
+                             --json prints {"count":n}`;
 
 type Flags = Record<string, string | number | true>;
 
@@ -159,8 +160,11 @@ const COMMANDS: Record<string, Command> = {
     },
   },
   open: {
-    flags: {},
-    run: (prs) => [String(stateCounts(prs).open)],
+    flags: { "--json": "switch" },
+    run: (prs, flags) => {
+      const count = stateCounts(prs).open;
+      return flags["--json"] ? [JSON.stringify({ count })] : [String(count)];
+    },
   },
 };
 
