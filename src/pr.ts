@@ -87,6 +87,41 @@ export function parseInstant(text: string): number | undefined {
   return day.getTime() + ((h * 60 + mi) * 60 + s) * 1000 + ms - offset;
 }
 
+/** An ISO 8601 duration, each unit a whole number. A week is kept as 7 days. */
+export type Duration = { years: number; months: number; days: number; hours: number; minutes: number; seconds: number };
+
+const DURATION = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
+const WEEKS = /^P(\d+)W$/;
+
+/**
+ * The duration of an ISO 8601 text such as P7D, PT36H, P2W or P1Y2M3DT4H5M6S, or undefined.
+ * Refused: no unit (P, PT), a sign, a fraction, a unit twice or out of order, a week with another unit.
+ */
+export function parseDuration(text: string): Duration | undefined {
+  const weeks = WEEKS.exec(text);
+  if (weeks) return { years: 0, months: 0, days: Number(weeks[1]) * 7, hours: 0, minutes: 0, seconds: 0 };
+  const m = DURATION.exec(text);
+  if (!m || text.endsWith("T") || m.slice(1).every((v) => v === undefined)) return undefined;
+  const [years, months, days, hours, minutes, seconds] = m.slice(1, 7).map((v) => Number(v ?? 0)) as number[];
+  return { years: years!, months: months!, days: days!, hours: hours!, minutes: minutes!, seconds: seconds! };
+}
+
+/**
+ * The instant duration before now, both in milliseconds since the epoch, or undefined past the range of a date.
+ * Years and months are calendar ones, counted first: P1M before 31 March is the last day of February.
+ */
+export function countBack(now: number, duration: Duration): number | undefined {
+  const at = new Date(now);
+  const month = at.getUTCFullYear() * 12 + at.getUTCMonth() - duration.years * 12 - duration.months;
+  const year = Math.floor(month / 12);
+  const lastDay = new Date(0);
+  lastDay.setUTCFullYear(year, (month % 12 + 12) % 12 + 1, 0);
+  at.setUTCFullYear(year, (month % 12 + 12) % 12, Math.min(at.getUTCDate(), lastDay.getUTCDate()));
+  const back = ((duration.days * 24 + duration.hours) * 60 + duration.minutes) * 60_000 + duration.seconds * 1000;
+  const instant = at.getTime() - back;
+  return Number.isFinite(instant) && Math.abs(instant) <= 8.64e15 ? instant : undefined;
+}
+
 /** n as a whole percentage of total, 0 when total is 0. */
 export function wholePercent(n: number, total: number): number {
   return total === 0 ? 0 : Math.round((n / total) * 100);
