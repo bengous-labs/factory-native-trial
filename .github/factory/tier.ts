@@ -13,7 +13,8 @@
  * decides first. Past it, Claude Haiku reads the diff alone, headless, with no tool, hook, settings file or MCP
  * server, and only with the model and the prompt `tier-cases.json` was validated with. Its verdict is recorded as a
  * `tier` check run on the head commit, which a later run reuses in place of asking again. Without `--ask`, a change
- * that needs the classifier answers `ask`. Any failure answers `human`, with its reason.
+ * that needs the classifier answers `ask`, and a pull request that moved past `--head` answers `superseded`: the
+ * run of its new head judges it. Any failure answers `human`, with its reason.
  *
  * `replay` judges each case of `tier-cases.json` three times and reports agreement and every false `low`. With
  * `--record`, a run with no false `low` and no failure writes the model and the prompt it validated into the file.
@@ -99,7 +100,9 @@ export type By = "floor" | "calibration" | "record" | "judge" | "failure";
 
 export type Decision =
   | { readonly kind: "decided"; readonly verdict: Verdict; readonly by: By }
-  | { readonly kind: "ask" };
+  | { readonly kind: "ask" }
+  /** The pull request moved to another head: this run judges nothing, and the run of that head shows its tier. */
+  | { readonly kind: "superseded"; readonly head: string };
 
 /** A decision and the lines the change adds and removes, null when the change was not read. */
 export interface Outcome {
@@ -687,15 +690,7 @@ export async function decide(
 ): Promise<Outcome> {
   const current = await github.head(pr);
 
-  if (current !== head) {
-    return {
-      decision: human(
-        `the pull request moved to ${current.slice(0, 7)}: the run of that commit judges it`,
-        "failure",
-      ),
-      lines: null,
-    };
-  }
+  if (current !== head) return { decision: { kind: "superseded", head: current }, lines: null };
 
   const files = await github.files(pr);
   const lines = linesOf(files);
@@ -844,6 +839,13 @@ async function gate(repo: string, pr: number, head: string, asks: boolean): Prom
   if (decision.kind === "ask") {
     console.log("ask the change passed the floor and no verdict is recorded on this commit");
     report("GITHUB_OUTPUT", ["ask=true"]);
+
+    return 0;
+  }
+
+  if (decision.kind === "superseded") {
+    console.log(`superseded the pull request moved to ${decision.head.slice(0, 7)}`);
+    report("GITHUB_OUTPUT", ["superseded=true"]);
 
     return 0;
   }

@@ -63,8 +63,14 @@ jobs:
         env:
           TIER: ${{ steps.judge.outputs.tier || steps.tier.outputs.tier }}
           REASON: ${{ steps.judge.outputs.reason || steps.tier.outputs.reason }}
+          SUPERSEDED: ${{ steps.judge.outputs.superseded || steps.tier.outputs.superseded }}
         run: |
           set -euo pipefail
+          if [ "$SUPERSEDED" = true ]; then
+            # The labels show the tier of the head commit, which this run did not judge.
+            echo "::error::The pull request moved past this commit: the run of its new head judges it."
+            exit 1
+          fi
           tier=human
           stale=tier:low
           if [ "$TIER" = low ]; then
