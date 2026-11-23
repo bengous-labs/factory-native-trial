@@ -83,7 +83,7 @@ jobs:
             echo "Tier low: $REASON"
             exit 0
           fi
-          echo "Tier human: ${REASON:-no tier was computed, after a failed step or for a fork's pull request}"
+          echo "Tier human: ${REASON:-no tier was computed, after a failed step or for a pull request from a fork}"
           # An agent acts with the owner's account but through the Claude GitHub App; only a label added without an app counts.
           last=$(gh api --paginate "repos/$REPO/issues/$PR/events?per_page=100" \
             --jq '.[] | select((.event == "labeled" or .event == "unlabeled") and .label.name == "human-approved") | "\(.event) \(.performed_via_github_app == null) \(.actor.login)"' | tail -n1)
