@@ -54,7 +54,7 @@ function readFlags(name: string, command: Command, args: string[]): Flags {
     const arg = args[i]!;
     const kind = Object.hasOwn(command.flags, arg) ? command.flags[arg] : undefined;
     if (kind === undefined) fail(`${name}: unknown ${arg.startsWith("-") ? "flag" : "argument"} ${arg}`, true);
-    if (Object.hasOwn(flags, arg)) fail(`${name}: ${arg} given twice`, true);
+    if (Object.hasOwn(flags, arg) || durations.some(([flag]) => flag === arg)) fail(`${name}: ${arg} given twice`, true);
     if (kind === "switch") {
       flags[arg] = true;
       continue;
