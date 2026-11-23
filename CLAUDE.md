@@ -13,7 +13,7 @@ A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics abo
 
 - Validate what comes from outside (stdin, arguments) where it enters, and fail with a one-line message, never a stack trace.
 - One way to do a thing: reuse the function, the argument convention and the test helper the file already has.
-- New behaviour comes with a test that fails without it. The tests are in `src/pr.test.ts`; test a command through the CLI with that file's `run` helper.
+- New behaviour comes with a test that fails without it.
 - The usage text and `README.md` list every command and flag.
 
 ## Pull request body
@@ -37,7 +37,7 @@ The `review` check fails while the review has findings, and only the next review
 
 Read a pull request's labels before any change to it. One labelled `needs-human` is stopped: `review` or `test` failed on three of its commits, or it conflicted with `main` a third time. Make no change, push nothing and reply to nothing until the label is gone.
 
-The owner restarts it by commenting what to do and removing the label. A comment is the owner's only when its `user.login` is the owner's and its `performed_via_github_app` is null: your own comments carry the same login, through an app. Follow the owner's comment, where it differs from the issue too.
+The owner restarts it by commenting what to do in the pull request's conversation and removing the label. A comment there is the owner's only when its `user.login` is the owner's and its `performed_via_github_app` is null: your own comments carry the same login, through an app. Follow the owner's comment, where it differs from the issue too. Never remove `needs-human` yourself.
 
 ## Conflict
 
