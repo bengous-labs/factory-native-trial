@@ -163,7 +163,7 @@ const COMMANDS: Record<string, Command> = {
     flags: { "--json": "switch" },
     run: (prs, flags) => {
       const count = stateCounts(prs).open;
-      return flags["--json"] ? [JSON.stringify({ count })] : [String(count)];
+      return flags["--json"] ? [JSON.stringify({ open: count })] : [String(count)];
     },
   },
 };
