@@ -27,7 +27,7 @@ summary --owner <login> --reviewer <login>
                            every metric in one JSON object: count, states, landed, closed, unattended,
                            rounds (median and max), authors and prefixes (name and count, most first)
 reviewed [--json]          pull requests with at least one review, from anyone, then their share of all pull requests; --json prints {"count","percent"}
-open [--json]              number of pull requests that are open; --json prints {"count"}
+open [--json]              number of pull requests that are open; --json prints {"open"}
 ```
 
 Bad input or a bad date prints one line on stderr and exits 1. An unknown command, a missing flag, a missing flag value, an unknown flag or a flag given twice prints one line that names it, then the usage, and exits 1.

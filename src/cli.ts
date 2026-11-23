@@ -28,7 +28,7 @@ commands:
   reviewed [--json]          pull requests with at least one review, from anyone, then their share of all pull requests;
                              --json prints {"count":n,"percent":n}
   open [--json]              number of pull requests that are open;
-                             --json prints {"count":n}`;
+                             --json prints {"open":n}`;
 
 type Flags = Record<string, string | number | true>;
 
@@ -163,7 +163,7 @@ const COMMANDS: Record<string, Command> = {
     flags: { "--json": "switch" },
     run: (prs, flags) => {
       const count = stateCounts(prs).open;
-      return flags["--json"] ? [JSON.stringify({ count })] : [String(count)];
+      return flags["--json"] ? [JSON.stringify({ open: count })] : [String(count)];
     },
   },
 };

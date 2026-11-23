@@ -581,12 +581,12 @@ test("cli open prints the number of open pull requests", async () => {
   expect((await run(["open"], "[]")).out).toBe("0\n");
 });
 
-test("cli open --json prints the text output's count as one object", async () => {
+test("cli open --json prints the text output's count as {open}", async () => {
   const input = [pr(1, "OPEN"), pr(2), pr(3, "CLOSED"), pr(4, "OPEN")];
   const text = (await run(["open"], input)).out.trimEnd();
   const r = await run(["open", "--json"], input);
   expect(r.code).toBe(0);
-  expect(r.out).toBe('{"count":2}\n');
-  expect(JSON.parse(r.out)).toEqual({ count: Number(text) });
-  expect((await run(["open", "--json"], "[]")).out).toBe('{"count":0}\n');
+  expect(r.out).toBe('{"open":2}\n');
+  expect(JSON.parse(r.out)).toEqual({ open: Number(text) });
+  expect((await run(["open", "--json"], "[]")).out).toBe('{"open":0}\n');
 });
