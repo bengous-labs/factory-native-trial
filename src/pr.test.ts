@@ -156,7 +156,75 @@ for (const args of [["--since", "banana"], ["--since", "16/11/2026"], ["--since"
     const r = await run(["merged", ...args], [pr(1)]);
     expect(r.code).toBe(1);
     expect(r.out).toBe("");
-    expect(r.err).toBe(`${args.at(-2)} ${args.at(-1)} is not an ISO 8601 date or date-time, such as 2026-11-16 or 2026-11-16T10:30:00Z\n`);
+    expect(r.err).toBe(`${args.at(-2)} ${args.at(-1)} is not an ISO 8601 date, date-time or duration, such as 2026-11-16, 2026-11-16T10:30:00Z or P7D\n`);
+  });
+}
+
+const merged = (...instants: string[]) => instants.map((mergedAt, i) => pr(i + 1, "MERGED", { mergedAt }));
+
+const countedBack: [string, string, string][] = [
+  ["P7D", "2026-11-16T10:00:00Z", "2026-11-09T10:00:00Z"],
+  ["PT36H", "2026-11-16T10:00:00Z", "2026-11-14T22:00:00Z"],
+  ["P2W", "2026-11-16T10:00:00Z", "2026-11-02T10:00:00Z"],
+  ["P1M", "2026-11-16T10:00:00Z", "2026-10-16T10:00:00Z"],
+  ["P1Y", "2026-11-16T10:00:00Z", "2025-11-16T10:00:00Z"],
+  ["P1Y2M3DT4H5M6S", "2026-11-16T10:00:00Z", "2025-09-13T05:54:54Z"],
+  ["P1M", "2026-03-31T12:00:00Z", "2026-02-28T12:00:00Z"],
+  ["P1M", "2028-03-31T12:00:00Z", "2028-02-29T12:00:00Z"],
+  ["P1Y", "2028-02-29T12:00:00Z", "2027-02-28T12:00:00Z"],
+  ["P2M", "2026-01-15T00:00:00Z", "2025-11-15T00:00:00Z"],
+];
+
+for (const [duration, now, since] of countedBack) {
+  test(`cli merged --since ${duration} --now ${now} starts at ${since}`, async () => {
+    const before = new Date(Date.parse(since) - 1000).toISOString();
+    const r = await run(["merged", "--since", duration, "--now", now], merged(before, since, now));
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    expect(r.out).toBe("2\n");
+  });
+}
+
+test("cli merged --since P7D --until P1D counts the pull requests merged in that window", async () => {
+  const input = merged("2026-11-09T09:59:59Z", "2026-11-09T10:00:00Z", "2026-11-15T09:59:59Z", "2026-11-15T10:00:00Z", "2026-11-16T09:00:00Z");
+  const r = await run(["merged", "--since", "P7D", "--until", "P1D", "--now", "2026-11-16T10:00:00Z"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("2\n");
+});
+
+test("cli merged mixes a duration with a date", async () => {
+  const input = merged("2026-11-01T00:00:00Z", "2026-11-15T00:00:00Z");
+  expect((await run(["merged", "--since", "2026-11", "--until", "P1D", "--now", "2026-11-16"], input)).out).toBe("1\n");
+});
+
+test("cli merged counts a duration back from the current time without --now", async () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+  const r = await run(["merged", "--since", "P7D"], merged(daysAgo(8), daysAgo(6), daysAgo(1)));
+  expect(r.code).toBe(0);
+  expect(r.out).toBe("2\n");
+});
+
+for (const value of ["P", "PT", "P1DT", "P1W2D", "P1.5D", "P1,5D", "P1D1D", "P1D2Y", "PT1M2H", "P1H", "P-1D", "PT1H1H", "P999999999D", "P999999Y"]) {
+  test(`cli merged --since ${value} is refused in one line, exit 1`, async () => {
+    const r = await run(["merged", "--since", value, "--now", "2026-11-16"], [pr(1)]);
+    expect(r.code).toBe(1);
+    expect(r.out).toBe("");
+    const message = value === "P999999999D" || value === "P999999Y" ? "counts back past the earliest date" : "is not an ISO 8601 duration of whole units in order, such as P7D, PT36H, P2W or P1Y2M3DT4H5M6S";
+    expect(r.err).toBe(`--since ${value} ${message}\n`);
+  });
+}
+
+test("cli merged --until -P7D, a negative duration, is refused in one line, exit 1", async () => {
+  const r = await run(["merged", "--since", "2026", "--until", "-P7D"], [pr(1)]);
+  expect(r.code).toBe(1);
+  expect(r.err).toBe("--until -P7D is not an ISO 8601 date, date-time or duration, such as 2026-11-16, 2026-11-16T10:30:00Z or P7D\n");
+});
+
+for (const value of ["P1D", "soon"]) {
+  test(`cli merged --now ${value} takes only an instant, exit 1`, async () => {
+    const r = await run(["merged", "--since", "P7D", "--now", value], [pr(1)]);
+    expect(r.code).toBe(1);
+    expect(r.err).toBe(`--now ${value} is not an ISO 8601 date or date-time, such as 2026-11-16 or 2026-11-16T10:30:00Z\n`);
   });
 }
 
@@ -179,6 +247,12 @@ const flagErrors: [string[], string][] = [
   [["nope"], "unknown command nope"],
   [["rounds", "--reviewer", "amy", "--reviewer", "bob"], "rounds: --reviewer given twice"],
   [["merged", "--since", "2026-11-01", "--since", "2026-11-20"], "merged: --since given twice"],
+  [["merged", "--since", "P7D", "--since", "P1D"], "merged: --since given twice"],
+  [["merged", "--since", "P7D", "--since", "2026-11-01"], "merged: --since given twice"],
+  [["merged", "--since", "2026", "--until", "P1D", "--until", "P2D"], "merged: --until given twice"],
+  [["merged", "--since", "2026-11-01", "--now", "2026-11-16"], "merged: --now needs a duration to count back from"],
+  [["merged", "--since", "P7D", "--now"], "merged: --now needs a value"],
+  [["merged", "--since", "P7D", "--now", "2026-11-16", "--now", "2026-11-17"], "merged: --now given twice"],
   [["states", "--json", "--json"], "states: --json given twice"],
   [["authors", "--json", "--json"], "authors: --json given twice"],
   [["prefixes", "--json", "--json"], "prefixes: --json given twice"],
@@ -218,7 +292,7 @@ test("cli help and no command print the usage to stdout, exit 0", async () => {
 test("the usage and README.md list every command and flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "open", "--limit 1000"]) {
+  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "--now", "P7D", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "open", "--limit 1000"]) {
     expect(usage).toContain(word);
     expect(readme).toContain(word);
   }
