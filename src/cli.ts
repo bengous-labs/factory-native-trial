@@ -130,7 +130,7 @@ const COMMANDS: Record<string, Command> = {
       const file = flags["--out"] as string | undefined;
       if (file === undefined) return [json];
       try {
-        writeFileSync(file, json);
+        writeFileSync(file, `${json}\n`);
       } catch (error) {
         fail(`summary: cannot write ${file}: ${(error as { code?: string }).code ?? error}`, false);
       }
