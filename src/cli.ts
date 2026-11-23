@@ -22,7 +22,8 @@ commands:
   summary --owner <login> --reviewer <login>
                              every metric in one JSON object: count, states, landed, closed, unattended,
                              rounds (median, max), authors and prefixes (name, count, most first)
-  reviewed                   pull requests with at least one review, from anyone, then their share of all pull requests
+  reviewed [--json]          pull requests with at least one review, from anyone, then their share of all pull requests;
+                             --json prints {"count":n,"percent":n}
   open                       number of pull requests that are open`;
 
 type Flags = Record<string, string | number | true>;
@@ -125,10 +126,11 @@ const COMMANDS: Record<string, Command> = {
     run: (prs, flags) => [JSON.stringify(summary(prs, flags["--owner"] as string, flags["--reviewer"] as string))],
   },
   reviewed: {
-    flags: {},
-    run: (prs) => {
+    flags: { "--json": "switch" },
+    run: (prs, flags) => {
       const reviewed = countReviewed(prs);
-      return [String(reviewed), `${wholePercent(reviewed, prs.length)}%`];
+      const percent = wholePercent(reviewed, prs.length);
+      return flags["--json"] ? [JSON.stringify({ count: reviewed, percent })] : [String(reviewed), `${percent}%`];
     },
   },
   open: {

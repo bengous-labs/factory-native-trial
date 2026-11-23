@@ -191,7 +191,7 @@ const flagErrors: [string[], string][] = [
   [["summary", "--owner", "amy", "--reviewer"], "summary: --reviewer needs a value"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--owner", "cat"], "summary: --owner given twice"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
-  [["reviewed", "--json"], "reviewed: unknown flag --json"],
+  [["reviewed", "--json", "--json"], "reviewed: --json given twice"],
   [["reviewed", "extra"], "reviewed: unknown argument extra"],
   [["open", "--json"], "open: unknown flag --json"],
   [["open", "extra"], "open: unknown argument extra"],
@@ -465,6 +465,16 @@ test("cli reviewed prints the number of pull requests with a review from anyone,
   expect(r.out).toBe("2\n50%\n");
   expect((await run(["reviewed"], [pr(1, "MERGED", { reviews: [review("amy")] }), pr(2), pr(3)])).out).toBe("1\n33%\n");
   expect((await run(["reviewed"], "[]")).out).toBe("0\n0%\n");
+});
+
+test("cli reviewed --json prints the text output's values as one object", async () => {
+  const input = [pr(1, "MERGED", { reviews: [review("amy")] }), pr(2, "OPEN", { reviews: [review("bob", "COMMENTED")] }), pr(3)];
+  const [count, share] = (await run(["reviewed"], input)).out.trimEnd().split("\n");
+  const r = await run(["reviewed", "--json"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('{"count":2,"percent":67}\n');
+  expect(JSON.parse(r.out)).toEqual({ count: Number(count), percent: parseInt(share!) });
+  expect((await run(["reviewed", "--json"], "[]")).out).toBe('{"count":0,"percent":0}\n');
 });
 
 test("the usage and README.md give reviewed its share", async () => {
