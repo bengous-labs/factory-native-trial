@@ -13,7 +13,7 @@ A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics abo
 
 - Validate what comes from outside (stdin, arguments) where it enters, and fail with a one-line message, never a stack trace.
 - One way to do a thing: reuse the function, the argument convention and the test helper the file already has.
-- New behaviour comes with a test that fails without it.
+- New behaviour comes with a test that fails without it. The tests are in `src/pr.test.ts`; test a command through the CLI with that file's `run` helper.
 - The usage text and `README.md` list every command and flag.
 
 ## Pull request body
