@@ -162,7 +162,7 @@ const COMMANDS: Record<string, Command> = {
   open: {
     flags: { "--json": "switch" },
     run: (prs, flags) => {
-      const count = stateCounts(prs).merged;
+      const count = stateCounts(prs).open;
       return flags["--json"] ? [JSON.stringify({ count })] : [String(count)];
     },
   },
