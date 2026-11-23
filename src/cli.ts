@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { GH_COMMAND, InputError, authorCounts, closedShare, countByAuthor, countByPrefix, countByState, countMerged, countReviewed, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, prefixCounts, reviewRounds, stateCounts, summary, wholePercent, type PullRequest } from "./pr";
 
 const USAGE = `usage: ${GH_COMMAND} | bun src/cli.ts <command>
@@ -19,9 +20,10 @@ commands:
                              --json prints [{"name":s,"count":n}, ...] in the same order
   landed [--json]            share of all pull requests that are merged;
                              --json prints {"percent":n}
-  summary --owner <login> --reviewer <login>
+  summary --owner <login> --reviewer <login> [--out <file>]
                              every metric in one JSON object: count, states, landed, closed, unattended,
-                             rounds (median, max), authors and prefixes (name, count, most first)
+                             rounds (median, max), authors and prefixes (name, count, most first);
+                             --out writes it to <file>, replacing its content, and prints nothing
   reviewed                   pull requests with at least one review, from anyone, then their share of all pull requests
   open                       number of pull requests that are open`;
 
@@ -120,9 +122,19 @@ const COMMANDS: Record<string, Command> = {
     },
   },
   summary: {
-    flags: { "--owner": "value", "--reviewer": "value" },
+    flags: { "--owner": "value", "--reviewer": "value", "--out": "value" },
     required: { "--owner": "login", "--reviewer": "login" },
-    run: (prs, flags) => [JSON.stringify(summary(prs, flags["--owner"] as string, flags["--reviewer"] as string))],
+    run: (prs, flags) => {
+      const json = JSON.stringify(summary(prs, flags["--owner"] as string, flags["--reviewer"] as string));
+      const file = flags["--out"] as string | undefined;
+      if (file === undefined) return [json];
+      try {
+        writeFileSync(file, `${json}\n`);
+      } catch (error) {
+        fail(`summary: cannot write ${file}: ${(error as { code?: string }).code ?? error}`, false);
+      }
+      return [];
+    },
   },
   reviewed: {
     flags: {},

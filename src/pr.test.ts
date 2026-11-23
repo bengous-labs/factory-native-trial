@@ -1,4 +1,7 @@
 import { expect, test } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { closedShare, countByAuthor, countByPrefix, countByState, countMerged, countUnattended, landedShare, median, mergedSince, parseInstant, parsePullRequests, stateCounts, wholePercent, type PullRequest } from "./pr";
 
 /** The one fixture builder: a merged pull request unless told otherwise, with mergedAt set only when merged. */
@@ -191,6 +194,8 @@ const flagErrors: [string[], string][] = [
   [["summary", "--owner", "amy", "--reviewer"], "summary: --reviewer needs a value"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--owner", "cat"], "summary: --owner given twice"],
   [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
+  [["summary", "--owner", "amy", "--reviewer", "bob", "--out"], "summary: --out needs a value"],
+  [["summary", "--owner", "amy", "--reviewer", "bob", "--out", "a", "--out", "b"], "summary: --out given twice"],
   [["reviewed", "--json"], "reviewed: unknown flag --json"],
   [["reviewed", "extra"], "reviewed: unknown argument extra"],
   [["open", "--json"], "open: unknown flag --json"],
@@ -218,7 +223,7 @@ test("cli help and no command print the usage to stdout, exit 0", async () => {
 test("the usage and README.md list every command and flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "reviewed", "open", "--limit 1000"]) {
+  for (const word of ["count", "--merged", "states", "--json", "rounds", "--reviewer", "unattended", "--owner", "merged", "--since", "--until", "closed", "prefixes", "authors", "landed", "summary", "--out", "reviewed", "open", "--limit 1000"]) {
     expect(usage).toContain(word);
     expect(readme).toContain(word);
   }
@@ -488,6 +493,39 @@ test("cli summary on empty input prints zeros and empty arrays", async () => {
   const r = await run(["summary", "--owner", "own", "--reviewer", "bob"], "[]");
   expect(r.code).toBe(0);
   expect(r.out).toBe('{"count":0,"states":{"open":0,"merged":0,"closed":0,"total":0},"landed":0,"closed":0,"unattended":{"count":0,"percent":0},"rounds":{"median":0,"max":0},"authors":[],"prefixes":[]}\n');
+});
+
+test("cli summary --out writes the JSON object and a newline to the file, replacing it, and prints nothing", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "summary-"));
+  const file = join(dir, "summary.json");
+  const args = ["summary", "--owner", "own", "--reviewer", "bob"];
+  const input = [pr(1), pr(2, "OPEN", { reviews: [review("bob")] })];
+  const printed = (await run(args, input)).out;
+  const r = await run([...args, "--out", file], input);
+  expect(r).toEqual({ out: "", err: "", code: 0 });
+  expect(readFileSync(file, "utf8")).toBe(printed);
+  writeFileSync(file, "old content that is longer than the new summary ".repeat(10));
+  await run([...args, "--out", file], "[]");
+  expect(readFileSync(file, "utf8")).toBe((await run(args, "[]")).out);
+});
+
+test("cli summary --out leaves the file as it is, or absent, on invalid input", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "summary-"));
+  const kept = join(dir, "kept.json");
+  const absent = join(dir, "absent.json");
+  writeFileSync(kept, "yesterday\n");
+  for (const file of [kept, absent]) {
+    const r = await run(["summary", "--owner", "own", "--reviewer", "bob", "--out", file], "{}");
+    expect(r).toEqual({ out: "", err: "expected a JSON array from gh pr list, got object\n", code: 1 });
+  }
+  expect(readFileSync(kept, "utf8")).toBe("yesterday\n");
+  expect(existsSync(absent)).toBe(false);
+});
+
+test("cli summary --out into a missing directory prints one line, exit 1", async () => {
+  const file = join(mkdtempSync(join(tmpdir(), "summary-")), "missing", "summary.json");
+  const r = await run(["summary", "--owner", "own", "--reviewer", "bob", "--out", file], "[]");
+  expect(r).toEqual({ out: "", err: `summary: cannot write ${file}: ENOENT\n`, code: 1 });
 });
 
 test("cli open prints the number of open pull requests", async () => {
