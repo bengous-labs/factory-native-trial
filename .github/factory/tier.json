@@ -1,4 +1,4 @@
 {
-  "lineCap": 400,
+  "lineCap": 9000,
   "humanPaths": ["package.json", "bun.lock", "bunfig.toml", "tsconfig.json"]
 }
