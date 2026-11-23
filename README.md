@@ -22,7 +22,7 @@ authors [--json]           pull requests opened per author login, most first; --
 landed [--json]            share of all pull requests that are merged; --json prints {"percent"}
 summary --owner <login> --reviewer <login> [--out <file>]
                            every metric in one JSON object: count, states, landed, closed, unattended,
-                           rounds (median, max), authors and prefixes (name, count, most first);
+                           rounds (median and max), authors and prefixes (name and count, most first);
                            --out writes it to <file>, replacing its content, and prints nothing
 reviewed [--json]          pull requests with at least one review, from anyone, then their share of all pull requests; --json prints {"count","percent"}
 open                       number of pull requests that are open
