@@ -344,10 +344,10 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes, authors, closed and landed their --json flag", async () => {
+test("the usage and README.md give prefixes, authors, closed, landed and reviewed their --json flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]", "landed [--json]"]) {
+  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]", "landed [--json]", "reviewed [--json]"]) {
     expect(usage).toContain(entry);
     expect(readme).toContain(entry);
   }
