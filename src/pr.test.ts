@@ -267,7 +267,7 @@ const flagErrors: [string[], string][] = [
   [["summary", "--owner", "amy", "--reviewer", "bob", "--json"], "summary: unknown flag --json"],
   [["reviewed", "--json", "--json"], "reviewed: --json given twice"],
   [["reviewed", "extra"], "reviewed: unknown argument extra"],
-  [["open", "--json"], "open: unknown flag --json"],
+  [["open", "--json", "--json"], "open: --json given twice"],
   [["open", "extra"], "open: unknown argument extra"],
 ];
 
@@ -418,10 +418,10 @@ test("cli prefixes --json prints the text output's values as one array, most fir
   expect((await run(["prefixes", "--json"], "[]")).out).toBe("[]\n");
 });
 
-test("the usage and README.md give prefixes, authors, closed, landed and reviewed their --json flag", async () => {
+test("the usage and README.md give prefixes, authors, closed, landed, reviewed and open their --json flag", async () => {
   const usage = (await run(["help"], "")).out;
   const readme = await Bun.file("README.md").text();
-  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]", "landed [--json]", "reviewed [--json]"]) {
+  for (const entry of ["prefixes [--json]", "authors [--json]", "closed [--json]", "landed [--json]", "reviewed [--json]", "open [--json]"]) {
     expect(usage).toContain(entry);
     expect(readme).toContain(entry);
   }
@@ -579,4 +579,14 @@ test("cli open prints the number of open pull requests", async () => {
   expect(r.code).toBe(0);
   expect(r.out).toBe("2\n");
   expect((await run(["open"], "[]")).out).toBe("0\n");
+});
+
+test("cli open --json prints the text output's count as {open}", async () => {
+  const input = [pr(1, "OPEN"), pr(2), pr(3, "CLOSED"), pr(4, "OPEN")];
+  const text = (await run(["open"], input)).out.trimEnd();
+  const r = await run(["open", "--json"], input);
+  expect(r.code).toBe(0);
+  expect(r.out).toBe('{"open":2}\n');
+  expect(JSON.parse(r.out)).toEqual({ open: Number(text) });
+  expect((await run(["open", "--json"], "[]")).out).toBe('{"open":0}\n');
 });
