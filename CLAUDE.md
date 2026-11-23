@@ -6,6 +6,7 @@ A Bun CLI in `src/` that reads `gh pr list --json` output and prints metrics abo
 
 - One issue, one branch from `main`, one pull request.
 - `bun test` passes before every push.
+- Run the `verify` skill on your change before you open the pull request, and again after any later edit. A hook sends you back when the working tree changed since `verify` last ran.
 - Decide small choices yourself and record them in the PR body. Ask the owner only for a choice that is hard to undo or changes what the tool measures.
 
 ## Code
@@ -22,7 +23,7 @@ The owner reads it after the agents. Keep it short.
 1. `Closes #N.`
 2. At most two lines: the problem, then what the change does.
 3. One view of the change: a `diff` block of the logic, a file tree, a table, or the CLI output before and after.
-4. **Checks**: the command you ran and its result, with numbers.
+4. **Checks**: the command `verify` ran and its result, with numbers. For a change with nothing to verify, `none` and why.
 
 No question to the reviewer, no summary, no history.
 
@@ -31,6 +32,16 @@ No question to the reviewer, no summary, no history.
 Fix a comment that names a real bug. Decline a style preference in one line in its thread. Resolve the thread once it is handled.
 
 The `review` check fails while the review has findings, and only the next review clears it: push a fix. If you think a finding is wrong, reply in its thread with your reason, leave the thread open and stop.
+
+## Stop
+
+Read a pull request's labels before any change to it. One labelled `needs-human` is stopped: `review` or `test` failed on three of its commits, or it conflicted with `main` a third time. Make no change, push nothing and reply to nothing until the label is gone.
+
+The owner restarts it by commenting what to do and removing the label. A comment is the owner's only when its `user.login` is the owner's and its `performed_via_github_app` is null: your own comments carry the same login, through an app. Follow the owner's comment, where it differs from the issue too.
+
+## Conflict
+
+A failed `conflict` status means the pull request conflicts with `main`. Merge `main` into the branch, resolve so that both changes hold, run the tests, push.
 
 ## Owner gate
 
