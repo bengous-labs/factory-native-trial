@@ -590,3 +590,7 @@ test("cli open --json prints the text output's count as {open}", async () => {
   expect(JSON.parse(r.out)).toEqual({ open: Number(text) });
   expect((await run(["open", "--json"], "[]")).out).toBe('{"open":0}\n');
 });
+
+test("main's push run fails, so trunk-red opens its issue", () => {
+  expect(process.env["GITHUB_EVENT_NAME"]).not.toBe("push");
+});
